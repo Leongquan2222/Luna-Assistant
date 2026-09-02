@@ -1104,20 +1104,60 @@ LANGUAGE
    RESPONSIVE
 =========================== */
 
-@media(max-width:768px) {
+/* =========================================
+   RESPONSIVE DESIGN FOR MOBILE & TABLETS
+   ========================================= */
 
-    .music-player {
+/* Màn hình máy tính bảng và điện thoại (<= 768px) */
+@media (max-width: 768px) {
+  /* Cho phép khung chat mở rộng 100% chiều rộng */
+  .chat-container, .container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 10px !important;
+    margin: 0 !important;
+  }
 
-        flex-wrap: wrap;
+  /* Chuyển Sidebar lịch sử lên trên hoặc ẩn đi khi dùng mobile */
+  .sidebar, #historySidebar {
+    width: 100% !important;
+    height: auto !important;
+    max-height: 200px;
+    margin-bottom: 15px;
+  }
 
-        justify-content: center;
+  /* Điều chỉnh cỡ chữ và khoảng cách trong tin nhắn */
+  .message {
+    max-width: 90% !important;
+    font-size: 14px !important;
+    padding: 8px 12px !important;
+  }
 
-    }
+  /* Thu gọn ô nhập tin nhắn và nút bấm */
+  .input-area, .chat-input-group {
+    flex-direction: row;
+    gap: 5px;
+  }
 
-    #volume {
+  #prompt {
+    font-size: 14px !important;
+    padding: 8px !important;
+  }
 
-        width: 100%;
+  /* Thu gọn chữ trên các nút hành động */
+  .btn {
+    padding: 6px 10px !important;
+    font-size: 13px !important;
+  }
+}
 
-    }
-
+/* Màn hình điện thoại nhỏ (<= 480px) */
+@media (max-width: 480px) {
+  .message {
+    max-width: 95% !important;
+  }
+  
+  .btn span {
+    display: none; /* Ẩn chữ chỉ để lại icon nếu nút có icon */
+  }
 }

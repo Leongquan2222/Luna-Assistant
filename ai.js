@@ -22,7 +22,6 @@ Trình bày code sạch sẽ trong block Markdown \`\`\`language ... \`\`\` và 
 document.addEventListener('DOMContentLoaded', () => {
   let promptInput, sendBtn, chatBody, clearBtn, newChatBtn, historyList, searchHistoryInput;
 
-  // Điền Key Mistral của em vào đây
   const MISTRAL_API_KEY = "FVYswNhYiJNkmiwR3LqOJhEe5wx6pKJ8";
 
   let conversationHistory = [];
@@ -108,18 +107,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- HÀM TRA CỨU DUCKDUCKGO (GỌI QUA LOCALHOST:3000) ---
+  // --- HÀM TRA CỨU DUCKDUCKGO TRỰC TIẾP CLIENT ---
   async function searchWeb(query) {
     try {
-      const res = await fetch('http://localhost:3000/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
-      });
+      const endpoint = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
+      const res = await fetch(endpoint);
       const data = await res.json();
-      return data.context || '';
+      return data.AbstractText || '';
     } catch (e) {
-      console.error("Lỗi kết nối Server Search:", e);
+      console.error("Lỗi tra cứu web:", e);
       return '';
     }
   }
@@ -160,18 +156,21 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({
           model: 'mistral-small-latest', 
           messages: apiMessages,
-          temperature: 0.3 // Giảm tính sáng tạo để AI bám sát dữ kiện lịch sử/khoa học
+          temperature: 0.3
         })
       });
 
       const data = await response.json();
 
       if (!response.ok || data.error) {
-      console.error("Chi tiết lỗi từ Mistral:", data); // Thêm dòng này để xem báo lỗi cụ thể
-      throw new Error(data.error?.message || "Lỗi kết nối Mistral API");
-  }
+        console.error("Chi tiết lỗi từ Mistral:", data);
+        throw new Error(data.error?.message || "Lỗi kết nối Mistral API");
+      }
       
-      // Trả lại câu hỏi gốc (ẩn context tra cứu) để lưu vào lịch sử cho gọn
+      // SỬA LỖI: Trích xuất replyText từ response
+      const replyText = data.choices[0].message.content;
+
+      // Trả lại câu hỏi gốc (ẩn context tra cứu) để lưu vào lịch sử
       conversationHistory[conversationHistory.length - 1].content = question;
       conversationHistory.push({ role: 'assistant', content: replyText });
 
@@ -180,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (error) {
       console.error("Lỗi API:", error);
-      appendMessage("Hệ thống", "Có lỗi xảy ra. Nhớ bật server backend và kiểm tra lại API Key nhé!", "system-message");
+      appendMessage("Hệ thống", "Có lỗi xảy ra. Vui lòng kiểm tra lại kết nối hoặc API Key!", "system-message");
       conversationHistory.pop();
     }
   }

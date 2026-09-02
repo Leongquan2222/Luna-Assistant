@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Luna Assistant</title>
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+
+    <!-- KaTeX -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/latex.min.css">
+
+    <!-- CSS -->
+    <link id="theme-style" rel="stylesheet" href="CSS/theme-valentine2.css">
+    
+    <link rel="stylesheet" href="ai.css">
+
+</head>
+
+<body>
+
+    <div class="container-fluid vh-100">
+
+        <div class="row h-100">
+
+            <!-- ================= Sidebar ================= -->
+
+            <aside class="col-lg-3 col-md-4 sidebar">
+
+                <h2 class="logo">
+                     Luna Assistant
+                </h2>
+                <div id="selecting-theme">
+                    <label for="themeSelect">Theme:</label>
+                    <select id="themeSelect" class="form-select">
+                        <option value="theme-ember.css">Dark</option>
+                        <option value="theme-latte.css">Light</option>
+                    </select>
+                </div>
+                <div id="historyList" class="history-list">
+
+                </div>
+                <button id="clearHistoryBtn" class="btn btn-danger clear-history-btn">
+                
+                    <i class="bi bi-trash3-fill"></i>
+                
+                    Clear History
+                
+                </button>
+
+            </aside>
+
+            <!-- ================= Main ================= -->
+
+            <main class="col-lg-9 col-md-8 main-content">
+
+                <!-- Header -->
+
+                <div class="chat-header">
+                
+                    <div>
+                
+                        <h3>Luna Assistant</h3>
+                
+                        <small>Your AI Learning Assistant</small>
+                
+                    </div>
+                
+                    <select id="language" class="language-select">
+                
+                        <option value="vi">🇻🇳 Tiếng Việt</option>
+                
+                        <option value="en">🇺🇸 English</option>
+                
+                    </select>
+                
+                </div>
+
+                <!-- Chat -->
+
+                <section class="chat-body" id="chatBody">
+
+               </section>
+
+                <!-- Input -->
+
+                <footer class="chat-footer">
+
+                    <input id="prompt" type="text" autocomplete="off" placeholder="Ask Luna anything...">
+
+                    <button id="sendBtn" class="btn btn-primary">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+
+                </footer>
+
+            </main>
+
+        </div>
+
+    </div>
+
+    <!-- Bootstrap -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Marked -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <!-- KaTeX -->
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+    <!-- AI -->
+     <script defer src="systemprompt.js"></script>
+    <script defer type="module" src="ai.js"></script>
+    <script defer src="theme-changer.js"></script>
+</body>
+</html>

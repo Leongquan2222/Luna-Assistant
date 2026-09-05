@@ -24,21 +24,75 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const COHERE_API_KEY = localStorage.getItem('cohere_key') || "cohere_3FMvXkYnpkxlSEfqNJmyaJl0co8rkpYLpAIEAEHW4TjKYI";
 
-  // --- 1. TẠO KEY LƯU TRỮ TÁCH BIỆT THEO TÀI KHOẢN ---
-  function getChatHistoryKey() {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    const userEmail = currentUser.email ? currentUser.email.replace(/[^a-zA-Z0-9]/g, '_') : 'guest';
-    return `luna_assistant_history_${userEmail}`;
-  }
+  // --- 1. HÀM LẤY KEY LƯU TRỮ THEO USER DYNAMIC ---
+function getChatHistoryKey() {
+  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+  // Sử dụng email hoặc id để phân biệt, nếu không có thì fallback về 'guest'
+  const userId = currentUser.email || currentUser.id || 'guest_user';
+  const cleanId = userId.replace(/[^a-zA-Z0-9]/g, '_');
+  return `luna_assistant_history_${cleanId}`;
+}
 
-  // --- MIGRATION DỮ LIỆU CŨ NẾU CÓ ---
+// --- 2. LẤY LỊCH SỬ CHAT THEO USER HIỆN TẠI ---
+function getSavedHistory() {
+  const key = getChatHistoryKey();
+  return JSON.parse(localStorage.getItem(key) || '[]');
+}
+
+// --- 3. LUÔN LƯU VÀO ĐÚNG KEY CỦA TÀI KHOẢN ĐANG DÙNG ---
+function saveToLocalStorage(userMsg, aiMsg) {
   const currentKey = getChatHistoryKey();
-  if (!localStorage.getItem(currentKey) && localStorage.getItem('luna_chat_history')) {
-    localStorage.setItem(currentKey, localStorage.getItem('luna_chat_history'));
+  const savedHistory = getSavedHistory();
+  const timestamp = new Date().toLocaleString('vi-VN');
+
+  const chatSession = {
+    id: Date.now(),
+    title: userMsg.length > 30 ? userMsg.substring(0, 30) + '...' : userMsg,
+    timestamp: timestamp,
+    messages: [
+      { sender: "Bạn", text: userMsg, roleClass: "user-message" },
+      { sender: "Luna", text: aiMsg, roleClass: "luna-message" }
+    ]
+  };
+
+  savedHistory.unshift(chatSession);
+  localStorage.setItem(currentKey, JSON.stringify(savedHistory));
+  renderHistorySidebar();
+}
+
+// --- 4. RENDER SIDEBAR ĐÚNG THEO TÀI KHOẢN HIỆN TẠI ---
+function renderHistorySidebar(filterText = '') {
+  if (!historyList) return;
+  historyList.innerHTML = '';
+  
+  const savedHistory = getSavedHistory(); // Đọc dữ liệu mới nhất
+  const filtered = savedHistory.filter(item => 
+    item.title.toLowerCase().includes(filterText.toLowerCase())
+  );
+
+  if (filtered.length === 0) {
+    historyList.innerHTML = `<div class="text-muted p-2 small">Không có lịch sử</div>`;
+    return;
   }
 
-  let conversationHistory = [];
-  let savedHistory = JSON.parse(localStorage.getItem(currentKey) || '[]');
+  filtered.forEach(session => {
+    const item = document.createElement('div');
+    item.className = 'history-item p-2 mb-1 border-bottom cursor-pointer hover-bg-light';
+    item.style.cursor = 'pointer';
+    item.innerHTML = `<div class="fw-bold text-truncate">${session.title}</div><div class="text-muted small">${session.timestamp}</div>`;
+    item.addEventListener('click', () => loadChatSession(session));
+    historyList.appendChild(item);
+  });
+}
+
+// --- 5. XÓA LỊCH SỬ ĐÚNG TÀI KHOẢN ---
+function clearAllHistory() {
+  if (confirm("Xóa toàn bộ lịch sử trò chuyện của tài khoản này?")) {
+    localStorage.removeItem(getChatHistoryKey());
+    resetChat();
+    renderHistorySidebar();
+  }
+}
 
   // --- 2. HIỂN THỊ TIN NHẮN & KATEX RENDER ---
   function appendMessage(sender, text, roleClass) {

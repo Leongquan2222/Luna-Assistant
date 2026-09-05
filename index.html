@@ -1,128 +1,50 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="vi">
 <head>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Luna Assistant</title>
-
-    <!-- Google Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
-
-    <!-- KaTeX -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/latex.min.css">
-
-    <!-- CSS -->
-    <link id="theme-style" rel="stylesheet" href="CSS/theme-valentine2.css">
-    
-    <link rel="stylesheet" href="ai.css">
-    <script>
-  // Kiểm tra xem đã có dữ liệu đăng nhập trong LocalStorage chưa
-  const currentUser = localStorage.getItem('currentUser');
-  
-  if (!currentUser) {
-    // Nếu chưa đăng nhập, chuyển hướng ngay về trang login
-    window.location.href = 'login.html'; // Thay 'auth.html' bằng tên file đăng nhập của em
-  }
-</script>
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURA AI Workspace</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
 </head>
-
 <body>
 
-    <div class="container-fluid vh-100">
+  <!-- Background Orbs -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
 
-        <div class="row h-100">
+  <!-- Top Navigation Dock -->
+  <header class="top-dock">
+    <div class="brand-logo">AURA ASSISTANT</div>
+    <nav class="dock-menu">
+      <a href="#" class="dock-item active">Hội thoại</a>
+      <a href="#" class="dock-item">Thư viện</a>
+      <a href="#" class="dock-item">Cài đặt API</a>
+    </nav>
+    <button class="btn-clear" id="clearHistoryBtn">Xóa lịch sử</button>
+  </header>
 
-            <!-- ================= Sidebar ================= -->
-
-            <aside class="col-lg-3 col-md-4 sidebar">
-
-                <h2 class="logo">
-                     Luna Assistant
-                </h2>
-               
-                <div id="historyList" class="history-list">
-
-                </div>
-                <button id="clearHistoryBtn" class="btn btn-danger clear-history-btn">
-                
-                    <i class="bi bi-trash3-fill"></i>
-                
-                    Clear History
-                
-                </button>
-
-            </aside>
-
-            <!-- ================= Main ================= -->
-
-            <main class="col-lg-9 col-md-8 main-content">
-
-                <!-- Header -->
-
-                <div class="chat-header">
-                
-                    <div>
-                
-                        <h3>Luna Assistant</h3>
-                
-                        <small>Your AI Learning Assistant</small>
-                
-                    </div>
-                </div>
-
-                <!-- Chat -->
-
-                <section class="chat-body" id="chatBody">
-
-               </section>
-
-                <!-- Input -->
-
-                <footer class="chat-footer">
-
-                    <input id="prompt" type="text" autocomplete="off" placeholder="Ask Luna anything...">
-
-                    <button id="sendBtn" class="btn btn-primary">
-                        <i class="bi bi-send-fill"></i>
-                    </button>
-
-                </footer>
-
-            </main>
-
-        </div>
-
+  <!-- Central Workspace -->
+  <main class="workspace">
+    <!-- Chat Stream Area -->
+    <div class="chat-stream" id="chatBody">
+      <div class="message assistant-message">
+        <strong>AURA:</strong>
+        <div>Chào em, em cần chị hỗ trợ gì hôm nay?</div>
+      </div>
     </div>
 
-    <!-- Bootstrap -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Floating Input Pill -->
+    <div class="input-wrapper">
+      <input type="text" id="prompt" placeholder="Hỏi bất kỳ điều gì hoặc nhập yêu cầu..." autocomplete="off">
+      <button class="btn-circle btn-img" id="generateImgBtn" title="Tạo ảnh AI">🎨</button>
+      <button class="btn-circle btn-send" id="sendBtn" title="Gửi tin nhắn">➔</button>
+    </div>
+  </main>
 
-    <!-- Marked -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-    <!-- KaTeX -->
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-
-    <!-- AI -->
-     <script defer src="systemprompt.js"></script>
-    <script defer type="module" src="ai.js"></script>
-    <script defer src="theme-changer.js"></script>
+  <script src="ai.js"></script>
 </body>
 </html>

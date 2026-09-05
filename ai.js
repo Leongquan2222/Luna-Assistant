@@ -186,17 +186,18 @@ document.addEventListener('DOMContentLoaded', () => {
     appendMessage("Bạn", question, "user-message");
     if (promptInput) promptInput.value = '';
 
-    const needsSearch = /ai là|thông tin|là gì|mới nhất|tin tức|tiểu sử|tra cứu|thời tiết/i.test(question);
-    let searchContext = "";
+    // Cập nhật regex nhận diện bài hát / nhạc
+const needsSearch = /ai là|thông tin|là gì|mới nhất|tin tức|tiểu sử|tra cứu|thời tiết|nhạc|bài hát|song|track|funk|phonk/i.test(question);
+let searchContext = "";
 
-    if (needsSearch) {
-      searchContext = await searchWeb(question);
-    }
+if (needsSearch) {
+  searchContext = await searchWeb(question);
+}
 
-    const finalPrompt = searchContext 
-      ? `[Thông tin tra cứu từ DuckDuckGo]:\n${searchContext}\n\n[Thắc mắc từ người dùng]: ${question}`
-      : question;
-
+// Bổ sung chỉ thị nghiêm ngặt cho Prompt gửi tới Cohere
+const finalPrompt = searchContext 
+  ? `[Thông tin tra cứu từ Web]:\n${searchContext}\n\n[Thắc mắc từ người dùng]: ${question}`
+  : `[Thắc mắc từ người dùng]: ${question}\n(Lưu ý: Nếu không có dữ liệu chính xác hoặc đây là các bản nhạc Phonk/Brazilian Funk/Remix mới, hãy báo rõ là chưa có thông tin thay vì tự đoán).`;
     try {
       const response = await fetch('https://api.cohere.ai/v1/chat', {
         method: 'POST',

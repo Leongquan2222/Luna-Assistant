@@ -1,15 +1,16 @@
 /* =========================================
-   AUTH PAGES STYLES
+   AUTH PAGES STYLES (INTEGRATED WITH AI.CSS)
    ========================================= */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: inherit;
 }
 
 body {
-    background: #0f172a;
+    background-color: var(--bg-primary, #0f172a);
+    color: var(--text-primary, #f8fafc);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -17,15 +18,16 @@ body {
 }
 
 .auth-container {
-    background-color: #1e293b;
-    border-radius: 12px;
-    box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4), 0 10px 10px rgba(0, 0, 0, 0.3);
+    background-color: var(--bg-secondary, #1e293b);
+    border-radius: var(--border-radius-lg, 12px);
+    box-shadow: var(--card-shadow, 0 14px 28px rgba(0, 0, 0, 0.4), 0 10px 10px rgba(0, 0, 0, 0.3));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
     position: relative;
     overflow: hidden;
     width: 768px;
     max-width: 100%;
     min-height: 480px;
-    color: #f8fafc;
+    color: var(--text-primary, #f8fafc);
 }
 
 .form-container {
@@ -36,7 +38,7 @@ body {
 }
 
 .form-container form {
-    background-color: #1e293b;
+    background-color: var(--bg-secondary, #1e293b);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -49,21 +51,27 @@ body {
 .form-container h2 {
     font-size: 24px;
     margin-bottom: 20px;
-    color: #38bdf8;
+    color: var(--accent-color, #38bdf8);
 }
 
 .input-group {
-    background-color: #334155;
-    border-radius: 8px;
+    background-color: var(--bg-tertiary, #334155);
+    border: 1px solid var(--border-color, transparent);
+    border-radius: var(--border-radius-md, 8px);
     margin: 8px 0;
     width: 100%;
     display: flex;
     align-items: center;
     padding: 0 12px;
+    transition: border-color 0.2s ease;
+}
+
+.input-group:focus-within {
+    border-color: var(--accent-color, #38bdf8);
 }
 
 .input-group i {
-    color: #94a3b8;
+    color: var(--text-muted, #94a3b8);
     margin-right: 10px;
 }
 
@@ -72,34 +80,39 @@ body {
     border: none;
     padding: 12px 5px;
     width: 100%;
-    color: #fff;
+    color: var(--text-primary, #ffffff);
     outline: none;
 }
 
 .forgot-pass {
-    color: #94a3b8;
+    color: var(--text-muted, #94a3b8);
     font-size: 13px;
     text-decoration: none;
     margin: 10px 0 15px;
+    transition: color 0.2s ease;
 }
 
 .forgot-pass:hover {
-    color: #38bdf8;
+    color: var(--accent-color, #38bdf8);
 }
 
 .btn-auth {
-    border-radius: 20px;
-    border: 1px solid #0284c7;
-    background-color: #0284c7;
-    color: #ffffff;
+    border-radius: var(--border-radius-pill, 20px);
+    border: 1px solid var(--btn-primary-bg, #0284c7);
+    background-color: var(--btn-primary-bg, #0284c7);
+    color: var(--btn-primary-text, #ffffff);
     font-size: 13px;
     font-weight: bold;
     padding: 12px 45px;
     letter-spacing: 1px;
     text-transform: uppercase;
-    transition: transform 80ms ease-in;
+    transition: transform 80ms ease-in, background-color 0.2s ease;
     cursor: pointer;
     margin-top: 10px;
+}
+
+.btn-auth:hover {
+    background-color: var(--btn-primary-hover, #0369a1);
 }
 
 .btn-auth:active {
@@ -108,7 +121,8 @@ body {
 
 .btn-auth.ghost {
     background-color: transparent;
-    border-color: #ffffff;
+    border-color: var(--text-primary, #ffffff);
+    color: var(--text-primary, #ffffff);
 }
 
 /* Vị trí Form */
@@ -138,15 +152,11 @@ body {
 }
 
 @keyframes show {
-
-    0%,
-    49.99% {
+    0%, 49.99% {
         opacity: 0;
         z-index: 1;
     }
-
-    50%,
-    100% {
+    50%, 100% {
         opacity: 1;
         z-index: 5;
     }
@@ -169,8 +179,8 @@ body {
 }
 
 .overlay {
-    background: linear-gradient(to right, #0284c7, #6366f1);
-    color: #ffffff;
+    background: var(--overlay-gradient, linear-gradient(to right, #0284c7, #6366f1));
+    color: var(--text-primary, #ffffff);
     position: relative;
     left: -100%;
     height: 100%;
@@ -229,10 +239,7 @@ body {
         width: 90%;
     }
 
-    .form-container {
-        width: 100%;
-    }
-
+    .form-container,
     .sign-in-container,
     .sign-up-container {
         width: 100%;
@@ -240,7 +247,6 @@ body {
 
     .overlay-container {
         display: none;
-        /* Ẩn bớt overlay trên di động để tối ưu trải nghiệm */
     }
 
     .auth-container.right-panel-active .sign-in-container {

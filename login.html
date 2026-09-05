@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập & Đăng ký</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="auth-container" id="authContainer">
+
+        <!-- FORM ĐĂNG KÝ -->
+        <div class="form-container sign-up-container">
+            <form id="signUpForm">
+                <h2>Tạo tài khoản</h2>
+                <div class="input-group">
+                    <i class="fa-solid fa-user"></i>
+                    <input type="text" id="signUpName" placeholder="Họ và tên" required />
+                </div>
+                <div class="input-group">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" id="signUpEmail" placeholder="Email" required />
+                </div>
+                <div class="input-group">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="signUpPassword" placeholder="Mật khẩu" required />
+                </div>
+                <button type="submit" class="btn-auth">Đăng ký</button>
+            </form>
+        </div>
+
+        <!-- FORM ĐĂNG NHẬP -->
+        <div class="form-container sign-in-container">
+            <form id="signInForm">
+                <h2>Đăng nhập</h2>
+                <div class="input-group">
+                    <i class="fa-solid fa-envelope"></i>
+                    <input type="email" id="signInEmail" placeholder="Email" required />
+                </div>
+                <div class="input-group">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="signInPassword" placeholder="Mật khẩu" required />
+                </div>
+                <a href="#" class="forgot-pass">Quên mật khẩu?</a>
+                <button type="submit" class="btn-auth">Đăng nhập</button>
+            </form>
+        </div>
+
+        <!-- PANEL CHUYỂN ĐỔI (OVERLAY) -->
+        <div class="overlay-container">
+            <div class="overlay">
+                <div class="overlay-panel overlay-left">
+                    <h2>Mừng trở lại!</h2>
+                    <p>Nếu đã có tài khoản, vui lòng đăng nhập để tiếp tục trải nghiệm.</p>
+                    <button class="btn-auth ghost" id="signInBtn">Đăng nhập</button>
+                </div>
+                <div class="overlay-panel overlay-right">
+                    <h2>Xin chào!</h2>
+                    <p>Tạo tài khoản mới để bắt đầu khám phá hệ thống.</p>
+                    <button class="btn-auth ghost" id="signUpBtn">Đăng ký</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="auth.js"></script>
+</body>
+
+</html>

@@ -9,12 +9,14 @@ Style: Concise, accurate, friendly, and direct. Avoid unnecessary fluff.
 
 [INSTRUCTIONS & FORMATTING]
 1. Answer directly and concisely without verbose intro/outro setups.
-2. Use LaTeX for math/physics/chemistry formulas:
+2. Auto-correct user typos/misspellings gracefully if detected (e.g., "gynasium" -> "gymnasium").
+3. Avoid making up fake facts (hallucinations) for unknown songs, tracks, or niche topics. If uncertain, state it directly.
+4. Use LaTeX for math/physics/chemistry formulas:
    - Inline math: $formula$
    - Block math: $$formula$$
-3. Use Markdown tables and bullet points for structured/comparative data.
-4. When assisting with code, provide clean, modern, and bug-free code snippets.
-5. Provide explanations in Vietnamese unless requested otherwise.
+5. Use Markdown tables and bullet points for structured/comparative data.
+6. When assisting with code, provide clean, modern, and bug-free code snippets.
+7. Provide explanations in Vietnamese unless requested otherwise.
 `.trim();
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,14 +24,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const COHERE_API_KEY = localStorage.getItem('cohere_key') || "cohere_3FMvXkYnpkxlSEfqNJmyaJl0co8rkpYLpAIEAEHW4TjKYI";
 
-  // --- KEY LƯU TRỰ TÁCH BIỆT THEO USER ---
+  // --- 1. TẠO KEY LƯU TRỮ TÁCH BIỆT THEO TÀI KHOẢN ---
   function getChatHistoryKey() {
     const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
     const userEmail = currentUser.email ? currentUser.email.replace(/[^a-zA-Z0-9]/g, '_') : 'guest';
     return `luna_assistant_history_${userEmail}`;
   }
 
-  // --- MIGRATION DỮ LIỆU CŨ ---
+  // --- MIGRATION DỮ LIỆU CŨ NẾU CÓ ---
   const currentKey = getChatHistoryKey();
   if (!localStorage.getItem(currentKey) && localStorage.getItem('luna_chat_history')) {
     localStorage.setItem(currentKey, localStorage.getItem('luna_chat_history'));
@@ -38,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let conversationHistory = [];
   let savedHistory = JSON.parse(localStorage.getItem(currentKey) || '[]');
 
-  // --- 1. HIỂN THỊ TIN NHẮN & RENDER LATEX ---
+  // --- 2. HIỂN THỊ TIN NHẮN & KATEX RENDER ---
   function appendMessage(sender, text, roleClass) {
     if (!chatBody) return;
     const msgDiv = document.createElement('div');
@@ -50,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     chatBody.appendChild(msgDiv);
     chatBody.scrollTop = chatBody.scrollHeight;
 
-    // Render KaTeX cho công thức Toán/Lý/Hóa
+    // Render KaTeX công thức Toán/Lý/Hóa
     setTimeout(() => {
       if (window.renderMathInElement) {
         window.renderMathInElement(msgDiv, {
@@ -72,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     renderHistorySidebar(e.target.value);
   }
 
-  // --- 2. QUẢN LÝ LỊCH SỬ CHAT ---
+  // --- 3. QUẢN LÝ LỊCH SỬ CHAT ---
   function saveToLocalStorage(userMsg, aiMsg) {
     const timestamp = new Date().toLocaleString('vi-VN');
     const chatSession = {
@@ -122,33 +124,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- 3. TRA CỨU WEB DUCKDUCKGO ---
- // Nâng cấp hàm searchWeb lấy dữ liệu linh hoạt hơn từ DuckDuckGo
-async function searchWeb(query) {
-  try {
-    const cleanQuery = query.replace(/[?.,!]/g, '').trim();
-    const endpoint = `https://api.duckduckgo.com/?q=${encodeURIComponent(cleanQuery)}&format=json&no_html=1&skip_disambig=1`;
-    const res = await fetch(endpoint);
-    const data = await res.json();
-    
-    // Ưu tiên lấy Abstract -> Definition -> RelatedTopics
-    if (data.AbstractText) return data.AbstractText;
-    if (data.Definition) return data.Definition;
-    if (data.RelatedTopics && data.RelatedTopics.length > 0) {
-      return data.RelatedTopics[0].Text || '';
+  // --- 4. TRA CỨU WEB DUCKDUCKGO NÂNG CAO ---
+  async function searchWeb(query) {
+    try {
+      const cleanQuery = query.replace(/[?.,!]/g, '').trim();
+      const endpoint = `https://api.duckduckgo.com/?q=${encodeURIComponent(cleanQuery)}&format=json&no_html=1&skip_disambig=1`;
+      
+      const res = await fetch(endpoint);
+      const data = await res.json();
+      
+      if (data.AbstractText) return data.AbstractText;
+      if (data.Definition) return data.Definition;
+      if (data.RelatedTopics && data.RelatedTopics.length > 0) {
+        return data.RelatedTopics[0].Text || '';
+      }
+      return '';
+    } catch (e) {
+      console.error("Lỗi tra cứu web:", e);
+      return '';
     }
-    return '';
-  } catch (e) {
-    console.error("Lỗi tra cứu web:", e);
-    return '';
   }
-}
 
-// Trong hàm handleSend(), bổ sung chỉ thị tự sửa lỗi chính tả cho Cohere
-const finalPrompt = searchContext 
-  ? `[Thông tin tra cứu từ Web]:\n${searchContext}\n\n[Câu hỏi]: ${question}`
-  : `[Câu hỏi từ người dùng]: ${question}\n(Lưu ý: Nếu người dùng viết sai/thiếu chính tả, hãy tự động sửa lại từ đúng nhất ngữ cảnh rồi giải thích ngắn gọn).`;
-  // --- 4. XỬ LÝ NÚT TIẾP TỤC ---
+  // --- 5. NÚT TIẾP TỤC ---
   async function handleContinue() {
     if (conversationHistory.length === 0) return;
 
@@ -191,7 +188,7 @@ const finalPrompt = searchContext
     }
   }
 
-  // --- 5. GỬI TIN NHẮN TỚI COHERE API ---
+  // --- 6. GỬI TIN NHẮN TỚI COHERE API ---
   async function handleSend() {
     const question = promptInput ? promptInput.value.trim() : '';
     if (!question) return;
@@ -199,18 +196,17 @@ const finalPrompt = searchContext
     appendMessage("Bạn", question, "user-message");
     if (promptInput) promptInput.value = '';
 
-    // Cập nhật regex nhận diện bài hát / nhạc
-const needsSearch = /ai là|thông tin|là gì|mới nhất|tin tức|tiểu sử|tra cứu|thời tiết|nhạc|bài hát|song|track|funk|phonk/i.test(question);
-let searchContext = "";
+    const needsSearch = /ai là|thông tin|là gì|mới nhất|tin tức|tiểu sử|tra cứu|thời tiết|nhạc|bài hát|song|track|funk|phonk/i.test(question);
+    let searchContext = "";
 
-if (needsSearch) {
-  searchContext = await searchWeb(question);
-}
+    if (needsSearch) {
+      searchContext = await searchWeb(question);
+    }
 
-// Bổ sung chỉ thị nghiêm ngặt cho Prompt gửi tới Cohere
-const finalPrompt = searchContext 
-  ? `[Thông tin tra cứu từ Web]:\n${searchContext}\n\n[Thắc mắc từ người dùng]: ${question}`
-  : `[Thắc mắc từ người dùng]: ${question}\n(Lưu ý: Nếu không có dữ liệu chính xác hoặc đây là các bản nhạc Phonk/Brazilian Funk/Remix mới, hãy báo rõ là chưa có thông tin thay vì tự đoán).`;
+    const finalPrompt = searchContext 
+      ? `[Thông tin tra cứu từ Web]:\n${searchContext}\n\n[Câu hỏi]: ${question}`
+      : `[Câu hỏi từ người dùng]: ${question}\n(Lưu ý: Nếu câu hỏi bị sai/thiếu chính tả, hãy tự động sửa lại từ đúng nhất ngữ cảnh rồi giải thích ngắn gọn).`;
+
     try {
       const response = await fetch('https://api.cohere.ai/v1/chat', {
         method: 'POST',
@@ -223,7 +219,7 @@ const finalPrompt = searchContext
           preamble: sysPrompt,
           message: finalPrompt,
           chat_history: conversationHistory,
-          temperature: 0.3, // Nhiệt độ thấp cho câu trả lời chính xác, chuẩn mực
+          temperature: 0.3,
           max_tokens: 1000
         })
       });
@@ -263,7 +259,7 @@ const finalPrompt = searchContext
     }
   }
 
-  // --- 6. GẮN SỰ KIỆN GIAO DIỆN ---
+  // --- 7. ĐỒNG BỘ GIAO DIỆN ---
   function resyncElements() {
     promptInput = document.getElementById('prompt');
     sendBtn = document.getElementById('sendBtn');

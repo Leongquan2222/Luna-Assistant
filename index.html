@@ -29,6 +29,15 @@
     <link id="theme-style" rel="stylesheet" href="CSS/theme-valentine2.css">
     
     <link rel="stylesheet" href="ai.css">
+    <script>
+  // Kiểm tra xem đã có dữ liệu đăng nhập trong LocalStorage chưa
+  const currentUser = localStorage.getItem('currentUser');
+  
+  if (!currentUser) {
+    // Nếu chưa đăng nhập, chuyển hướng ngay về trang login
+    window.location.href = 'auth.html'; // Thay 'auth.html' bằng tên file đăng nhập của em
+  }
+</script>
 
 </head>
 

@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (userData.password === password) {
         localStorage.setItem('currentUser', JSON.stringify(userData));
         alert(`Chào mừng ${userData.name} đã quay trở lại!`);
-        window.location.href = 'index.html'; // Chuyển về trang chính
+        window.location.href = 'ai.html'; // Chuyển về trang chính
       } else {
         alert('Mật khẩu không chính xác!');
       }

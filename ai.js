@@ -213,7 +213,7 @@ function clearAllHistory() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'command-r-plus-08-2024',
+          model: 'tiny-aya-global',
           preamble: sysPrompt,
           message: "[HỆ THỐNG]: Hãy tiếp tục câu trả lời còn dở dang một cách chi tiết và logic.",
           chat_history: conversationHistory,

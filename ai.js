@@ -20,134 +20,65 @@ Style: Concise, accurate, friendly, and direct. Avoid unnecessary fluff.
 `.trim();
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Biến UI Elements
   let promptInput, sendBtn, continueBtn, chatBody, clearBtn, newChatBtn, historyList, searchHistoryInput;
+
+  // Biến Trạng Thái Chat
+  let conversationHistory = [];
+  let currentSessionId = null;
 
   const COHERE_API_KEY = localStorage.getItem('cohere_key') || "cohere_3FMvXkYnpkxlSEfqNJmyaJl0co8rkpYLpAIEAEHW4TjKYI";
 
-  // --- 1. HÀM LẤY KEY LƯU TRỮ THEO USER DYNAMIC ---
-function getChatHistoryKey() {
-  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  // Sử dụng email hoặc id để phân biệt, nếu không có thì fallback về 'guest'
-  const userId = currentUser.email || currentUser.id || 'guest_user';
-  const cleanId = userId.replace(/[^a-zA-Z0-9]/g, '_');
-  return `luna_assistant_history_${cleanId}`;
-}
-
-// --- 2. LẤY LỊCH SỬ CHAT THEO USER HIỆN TẠI ---
-function getSavedHistory() {
-  const key = getChatHistoryKey();
-  return JSON.parse(localStorage.getItem(key) || '[]');
-}
-
-// --- 3. LUÔN LƯU VÀO ĐÚNG KEY CỦA TÀI KHOẢN ĐANG DÙNG ---
-function saveToLocalStorage(userMsg, aiMsg) {
-  const currentKey = getChatHistoryKey();
-  const savedHistory = getSavedHistory();
-  const timestamp = new Date().toLocaleString('vi-VN');
-
-  const chatSession = {
-    id: Date.now(),
-    title: userMsg.length > 30 ? userMsg.substring(0, 30) + '...' : userMsg,
-    timestamp: timestamp,
-    messages: [
-      { sender: "Bạn", text: userMsg, roleClass: "user-message" },
-      { sender: "Luna", text: aiMsg, roleClass: "luna-message" }
-    ]
-  };
-
-  savedHistory.unshift(chatSession);
-  localStorage.setItem(currentKey, JSON.stringify(savedHistory));
-  renderHistorySidebar();
-}
-
-// --- 4. RENDER SIDEBAR ĐÚNG THEO TÀI KHOẢN HIỆN TẠI ---
-function renderHistorySidebar(filterText = '') {
-  if (!historyList) return;
-  historyList.innerHTML = '';
-  
-  const savedHistory = getSavedHistory(); // Đọc dữ liệu mới nhất
-  const filtered = savedHistory.filter(item => 
-    item.title.toLowerCase().includes(filterText.toLowerCase())
-  );
-
-  if (filtered.length === 0) {
-    historyList.innerHTML = `<div class="text-muted p-2 small">Không có lịch sử</div>`;
-    return;
+  // --- 1. MÃ HÓA & LƯU TRỮ THEO TÀI KHOẢN ---
+  function getChatHistoryKey() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const userId = currentUser.email || currentUser.id || 'guest_user';
+    const cleanId = userId.replace(/[^a-zA-Z0-9]/g, '_');
+    return `luna_assistant_history_${cleanId}`;
   }
 
-  filtered.forEach(session => {
-    const item = document.createElement('div');
-    item.className = 'history-item p-2 mb-1 border-bottom cursor-pointer hover-bg-light';
-    item.style.cursor = 'pointer';
-    item.innerHTML = `<div class="fw-bold text-truncate">${session.title}</div><div class="text-muted small">${session.timestamp}</div>`;
-    item.addEventListener('click', () => loadChatSession(session));
-    historyList.appendChild(item);
-  });
-}
-
-// --- 5. XÓA LỊCH SỬ ĐÚNG TÀI KHOẢN ---
-function clearAllHistory() {
-  if (confirm("Xóa toàn bộ lịch sử trò chuyện của tài khoản này?")) {
-    localStorage.removeItem(getChatHistoryKey());
-    resetChat();
-    renderHistorySidebar();
-  }
-}
-
-  // --- 2. HIỂN THỊ TIN NHẮN & KATEX RENDER ---
-  function appendMessage(sender, text, roleClass) {
-    if (!chatBody) return;
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `message ${roleClass} mb-3`;
-    
-    const formattedContent = window.marked ? window.marked.parse(text) : text;
-    const senderHeader = sender ? `<strong>${sender}:</strong> ` : '';
-    msgDiv.innerHTML = `${senderHeader}<div>${formattedContent}</div>`;
-    chatBody.appendChild(msgDiv);
-    chatBody.scrollTop = chatBody.scrollHeight;
-
-    // Render KaTeX công thức Toán/Lý/Hóa
-    setTimeout(() => {
-      if (window.renderMathInElement) {
-        window.renderMathInElement(msgDiv, {
-          delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '$', right: '$', display: false }
-          ],
-          throwOnError: false
-        });
-      }
-    }, 0);
+  function getSavedHistory() {
+    const key = getChatHistoryKey();
+    return JSON.parse(localStorage.getItem(key) || '[]');
   }
 
-  function promptKeypressHandler(e) {
-    if (e.key === 'Enter') handleSend();
-  }
-
-  function searchInputHandler(e) {
-    renderHistorySidebar(e.target.value);
-  }
-
-  // --- 3. QUẢN LÝ LỊCH SỬ CHAT ---
-  function saveToLocalStorage(userMsg, aiMsg) {
+  function saveSessionToLocalStorage(userMsg, aiMsg) {
+    const key = getChatHistoryKey();
+    const savedHistory = getSavedHistory();
     const timestamp = new Date().toLocaleString('vi-VN');
-    const chatSession = {
-      id: Date.now(),
-      title: userMsg.length > 30 ? userMsg.substring(0, 30) + '...' : userMsg,
-      timestamp: timestamp,
-      messages: [
-        { sender: "Bạn", text: userMsg, roleClass: "user-message" },
-        { sender: "Luna", text: aiMsg, roleClass: "luna-message" }
-      ]
-    };
-    savedHistory.unshift(chatSession);
-    localStorage.setItem(getChatHistoryKey(), JSON.stringify(savedHistory));
+
+    if (!currentSessionId) {
+      currentSessionId = Date.now();
+      const newSession = {
+        id: currentSessionId,
+        title: userMsg.length > 30 ? userMsg.substring(0, 30) + '...' : userMsg,
+        timestamp: timestamp,
+        messages: [
+          { sender: "Bạn", text: userMsg, roleClass: "user-message" },
+          { sender: "Luna", text: aiMsg, roleClass: "luna-message" }
+        ]
+      };
+      savedHistory.unshift(newSession);
+    } else {
+      const sessionIndex = savedHistory.findIndex(s => s.id === currentSessionId);
+      if (sessionIndex !== -1) {
+        savedHistory[sessionIndex].messages.push(
+          { sender: "Bạn", text: userMsg, roleClass: "user-message" },
+          { sender: "Luna", text: aiMsg, roleClass: "luna-message" }
+        );
+      }
+    }
+
+    localStorage.setItem(key, JSON.stringify(savedHistory));
     renderHistorySidebar();
   }
 
+  // --- 2. RENDER GIAO DIỆN & SIDEBAR ---
   function renderHistorySidebar(filterText = '') {
     if (!historyList) return;
     historyList.innerHTML = '';
+    
+    const savedHistory = getSavedHistory();
     const filtered = savedHistory.filter(item => 
       item.title.toLowerCase().includes(filterText.toLowerCase())
     );
@@ -161,16 +92,45 @@ function clearAllHistory() {
       const item = document.createElement('div');
       item.className = 'history-item p-2 mb-1 border-bottom cursor-pointer hover-bg-light';
       item.style.cursor = 'pointer';
-      item.innerHTML = `<div class="fw-bold text-truncate">${session.title}</div><div class="text-muted small">${session.timestamp}</div>`;
+      item.innerHTML = `
+        <div class="fw-bold text-truncate">${session.title}</div>
+        <div class="text-muted small">${session.timestamp}</div>
+      `;
       item.addEventListener('click', () => loadChatSession(session));
       historyList.appendChild(item);
     });
+  }
+
+  function appendMessage(sender, text, roleClass) {
+    if (!chatBody) return;
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `message ${roleClass} mb-3`;
+    
+    const formattedContent = window.marked ? window.marked.parse(text) : text;
+    const senderHeader = sender ? `<strong>${sender}:</strong> ` : '';
+    msgDiv.innerHTML = `${senderHeader}<div>${formattedContent}</div>`;
+    chatBody.appendChild(msgDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    setTimeout(() => {
+      if (window.renderMathInElement) {
+        window.renderMathInElement(msgDiv, {
+          delimiters: [
+            { left: '$$', right: '$$', display: true },
+            { left: '$', right: '$', display: false }
+          ],
+          throwOnError: false
+        });
+      }
+    }, 0);
   }
 
   function loadChatSession(session) {
     if (!chatBody) return;
     chatBody.innerHTML = '';
     conversationHistory = [];
+    currentSessionId = session.id;
+
     session.messages.forEach(msg => {
       appendMessage(msg.sender, msg.text, msg.roleClass);
       const role = msg.sender === "Bạn" ? "USER" : "CHATBOT";
@@ -178,7 +138,21 @@ function clearAllHistory() {
     });
   }
 
-  // --- 4. TRA CỨU WEB DUCKDUCKGO NÂNG CAO ---
+  function resetChat() {
+    if (chatBody) chatBody.innerHTML = '';
+    conversationHistory = [];
+    currentSessionId = null;
+  }
+
+  function clearAllHistory() {
+    if (confirm("Xóa toàn bộ lịch sử trò chuyện của tài khoản này?")) {
+      localStorage.removeItem(getChatHistoryKey());
+      resetChat();
+      renderHistorySidebar();
+    }
+  }
+
+  // --- 3. TRA CỨU WEB & XỬ LÝ API ---
   async function searchWeb(query) {
     try {
       const cleanQuery = query.replace(/[?.,!]/g, '').trim();
@@ -199,50 +173,6 @@ function clearAllHistory() {
     }
   }
 
-  // --- 5. NÚT TIẾP TỤC ---
-  async function handleContinue() {
-    if (conversationHistory.length === 0) return;
-
-    appendMessage("Hệ thống", "*(Luna đang viết tiếp...)*", "system-message");
-
-    try {
-      const response = await fetch('https://api.cohere.ai/v1/chat', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${COHERE_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'tiny-aya-global',
-          preamble: sysPrompt,
-          message: "[HỆ THỐNG]: Hãy tiếp tục câu trả lời còn dở dang một cách chi tiết và logic.",
-          chat_history: conversationHistory,
-          temperature: 0.3,
-          max_tokens: 1000,
-        })
-      });
-
-      const data = await response.json();
-      if (!response.ok || data.error) throw new Error(data.message || "Lỗi API");
-
-      const replyText = data.text;
-
-      const lastSysMsg = chatBody.querySelector('.system-message:last-child');
-      if (lastSysMsg) lastSysMsg.remove();
-
-      conversationHistory.push({ role: 'USER', message: "..." });
-      conversationHistory.push({ role: 'CHATBOT', message: replyText });
-
-      appendMessage("Luna", replyText, "luna-message");
-      saveToLocalStorage("...", replyText);
-
-    } catch (error) {
-      console.error("Lỗi khi tiếp tục:", error);
-      appendMessage("Hệ thống", "Có lỗi xảy ra khi tải tiếp.", "system-message");
-    }
-  }
-
-  // --- 6. GỬI TIN NHẮN TỚI COHERE API ---
   async function handleSend() {
     const question = promptInput ? promptInput.value.trim() : '';
     if (!question) return;
@@ -281,7 +211,6 @@ function clearAllHistory() {
       const data = await response.json();
 
       if (!response.ok || data.error) {
-        console.error("Chi tiết lỗi Cohere:", data);
         throw new Error(data.message || "Lỗi kết nối Cohere API");
       }
       
@@ -291,7 +220,7 @@ function clearAllHistory() {
       conversationHistory.push({ role: 'CHATBOT', message: replyText });
 
       appendMessage("Luna", replyText, "luna-message");
-      saveToLocalStorage(question, replyText);
+      saveSessionToLocalStorage(question, replyText);
 
     } catch (error) {
       console.error("Lỗi API:", error);
@@ -299,21 +228,57 @@ function clearAllHistory() {
     }
   }
 
-  function resetChat() {
-    if (chatBody) chatBody.innerHTML = '';
-    conversationHistory = [];
-  }
+  async function handleContinue() {
+    if (conversationHistory.length === 0) return;
 
-  function clearAllHistory() {
-    if (confirm("Xóa toàn bộ lịch sử trò chuyện của trợ lý?")) {
-      localStorage.removeItem(getChatHistoryKey());
-      savedHistory = [];
-      resetChat();
-      renderHistorySidebar();
+    appendMessage("Hệ thống", "*(Luna đang viết tiếp...)*", "system-message");
+
+    try {
+      const response = await fetch('https://api.cohere.ai/v1/chat', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${COHERE_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'tiny-aya-global',
+          preamble: sysPrompt,
+          message: "[HỆ THỐNG]: Hãy tiếp tục câu trả lời còn dở dang một cách chi tiết và logic.",
+          chat_history: conversationHistory,
+          temperature: 0.3,
+          max_tokens: 1000,
+        })
+      });
+
+      const data = await response.json();
+      if (!response.ok || data.error) throw new Error(data.message || "Lỗi API");
+
+      const replyText = data.text;
+
+      const lastSysMsg = chatBody.querySelector('.system-message:last-child');
+      if (lastSysMsg) lastSysMsg.remove();
+
+      conversationHistory.push({ role: 'USER', message: "..." });
+      conversationHistory.push({ role: 'CHATBOT', message: replyText });
+
+      appendMessage("Luna", replyText, "luna-message");
+      saveSessionToLocalStorage("...", replyText);
+
+    } catch (error) {
+      console.error("Lỗi khi tiếp tục:", error);
+      appendMessage("Hệ thống", "Có lỗi xảy ra khi tải tiếp.", "system-message");
     }
   }
 
-  // --- 7. ĐỒNG BỘ GIAO DIỆN ---
+  // --- 4. EVENT HANDLERS ---
+  function promptKeypressHandler(e) {
+    if (e.key === 'Enter') handleSend();
+  }
+
+  function searchInputHandler(e) {
+    renderHistorySidebar(e.target.value);
+  }
+
   function resyncElements() {
     promptInput = document.getElementById('prompt');
     sendBtn = document.getElementById('sendBtn');

@@ -123,18 +123,31 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- 3. TRA CỨU WEB DUCKDUCKGO ---
-  async function searchWeb(query) {
-    try {
-      const endpoint = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_html=1&skip_disambig=1`;
-      const res = await fetch(endpoint);
-      const data = await res.json();
-      return data.AbstractText || '';
-    } catch (e) {
-      console.error("Lỗi tra cứu web:", e);
-      return '';
+ // Nâng cấp hàm searchWeb lấy dữ liệu linh hoạt hơn từ DuckDuckGo
+async function searchWeb(query) {
+  try {
+    const cleanQuery = query.replace(/[?.,!]/g, '').trim();
+    const endpoint = `https://api.duckduckgo.com/?q=${encodeURIComponent(cleanQuery)}&format=json&no_html=1&skip_disambig=1`;
+    const res = await fetch(endpoint);
+    const data = await res.json();
+    
+    // Ưu tiên lấy Abstract -> Definition -> RelatedTopics
+    if (data.AbstractText) return data.AbstractText;
+    if (data.Definition) return data.Definition;
+    if (data.RelatedTopics && data.RelatedTopics.length > 0) {
+      return data.RelatedTopics[0].Text || '';
     }
+    return '';
+  } catch (e) {
+    console.error("Lỗi tra cứu web:", e);
+    return '';
   }
+}
 
+// Trong hàm handleSend(), bổ sung chỉ thị tự sửa lỗi chính tả cho Cohere
+const finalPrompt = searchContext 
+  ? `[Thông tin tra cứu từ Web]:\n${searchContext}\n\n[Câu hỏi]: ${question}`
+  : `[Câu hỏi từ người dùng]: ${question}\n(Lưu ý: Nếu người dùng viết sai/thiếu chính tả, hãy tự động sửa lại từ đúng nhất ngữ cảnh rồi giải thích ngắn gọn).`;
   // --- 4. XỬ LÝ NÚT TIẾP TỤC ---
   async function handleContinue() {
     if (conversationHistory.length === 0) return;

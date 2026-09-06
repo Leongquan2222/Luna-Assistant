@@ -93,7 +93,9 @@ document.addEventListener('DOMContentLoaded', () => {
           preamble: sysPrompt,
           message: question,
           chat_history: conversationHistory,
-          temperature: 0.1 // Để thấp để đảm bảo tính chính xác kiến thức SGK
+          connectors:id[{id:"web-search"}],
+          temperature: 0.1,// Để thấp để đảm bảo tính chính xác kiến thức SGK
+          
         })
       });
 

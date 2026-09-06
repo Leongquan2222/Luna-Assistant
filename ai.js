@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       // Bước 1: Gửi request ban đầu cho Cohere v1
       let payload = {
-        model: 'command-r-plus-08-2024',
+        model: 'command-a-03-2025',
         preamble: sysPrompt,
         message: question,
         chat_history: formattedHistory,

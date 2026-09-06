@@ -1,13 +1,14 @@
-// Đọc SystemPrompt từ file systemprompt.js nếu có, hoặc dùng mặc định
+// System Prompt siết chặt vai trò và tính chính xác kiến thức
 const sysPrompt = window.SystemPrompt || `
-Bạn là Luna - một nữ gia sư AI thông minh, sắc sảo và điềm tĩnh.
+[VAI TRÒ VÀ BẢN DẠNG]
+Bạn là Luna - một nữ gia sư AI thông minh, sắc sảo, điềm tĩnh và chính xác.
 Nhiệm vụ: Hướng dẫn người dùng học tập (Toán, Tiếng Anh, Lập trình, Khoa học).
 
-[QUY TẮC PHẢN HỒI & XƯNG HÔ - BẮT BUỘC]:
-1. Xưng hô tuyệt đối: Luôn xưng "chị" (hoặc "Luna") và gọi người dùng là "em". BẤT KỂ người dùng xưng hô thế nào, KHÔNG BAO GIỜ xưng "em" hay dùng từ kính ngữ bề dưới như "ạ", "dạ".
-2. Phong cách: Ngắn gọn, súc tích, đi thẳng vào vấn đề, rõ ràng, không dài dòng lê thê.
-3. Không biết thông tin: Thừa nhận thẳng thắn và đề xuất hướng tìm kiếm.
-4. Trò chơi lịch sử/văn học: Dựa vào thông tin tra cứu, KHÔNG tự bịa nguyên văn hay râu ông nọ chắp cằm bà kia.
+[QUY TẮC PHẢN HỒI & XƯNG HÔ - BẮT BUỘC TRUYỆT ĐỐI]:
+1. Xưng hô: Luôn xưng "chị" (hoặc "Luna") và gọi người dùng là "em".
+2. KHÔNG DÙNG TỪ KÍNH NGỮ BỀ DƯỚI: Tuyệt đối KHÔNG bao giờ dùng từ "ạ", "dạ" ở bất kỳ đâu.
+3. Phong cách: Ngắn gọn, súc tích, đi thẳng vào vấn đề, rõ ràng, không dài dòng lê thê.
+4. Lịch sử/Văn học/Khoa học: Dựa vào tri thức chuẩn xác, KHÔNG tự bịa đặt hay râu ông nọ chắp cằm bà kia.
 
 [ĐỊNH DẠNG TOÁN / KHOA HỌC]:
 1. BẮT BUỘC dùng LaTeX cho công thức.
@@ -22,10 +23,10 @@ Trình bày code sạch sẽ trong block Markdown \`\`\`language ... \`\`\` và 
 document.addEventListener('DOMContentLoaded', () => {
   let promptInput, sendBtn, chatBody, newChatBtn;
 
-  // Lấy API Key Cohere từ localStorage hoặc điền Key của em vào đây
-  const COHERE_API_KEY = localStorage.getItem('cohere_key') || "cohere_bUBuU1bXq3kB5aaK5eiC6K0wiBpigLts1BicWwWg2Lnd4o";
+  // Lấy API Key Cohere từ localStorage hoặc gán Key mặc định
+  const COHERE_API_KEY = localStorage.getItem('cohere_key') || "bUBuU1bXq3kB5aaK5eiC6K0wiBpigLts1BicWwWg";
 
-  // Lịch sử cuộc trò chuyện dạng mảng Cohere ({ role: 'USER' | 'CHATBOT', message: '' })
+  // Lịch sử cuộc trò chuyện chuẩn Cohere ({ role: 'USER' | 'CHATBOT', message: '' })
   let conversationHistory = [];
 
   function appendMessage(sender, text, roleClass) {
@@ -44,8 +45,14 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     chatBody.appendChild(msgDiv);
-    chatBody.scrollTop = chatBody.scrollHeight;
+    
+    // Cuộn mượt xuống cuối khung chat
+    chatBody.scrollTo({
+      top: chatBody.scrollHeight,
+      behavior: 'smooth'
+    });
 
+    // Render LaTeX bằng KaTeX
     setTimeout(() => {
       if (window.renderMathInElement) {
         window.renderMathInElement(msgDiv, {
@@ -60,22 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function promptKeypressHandler(e) {
-    if (e.key === 'Enter') handleSend();
-  }
-
-  // --- HÀM TRA CỨU DUCKDUCKGO (GỌI QUA LOCALHOST:3000) ---
-  async function searchWeb(query) {
-    try {
-      const res = await fetch('http://localhost:3000/api/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query })
-      });
-      const data = await res.json();
-      return data.context || '';
-    } catch (e) {
-      console.error("Lỗi kết nối Server Search:", e);
-      return '';
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   }
 
@@ -87,17 +81,6 @@ document.addEventListener('DOMContentLoaded', () => {
     appendMessage("Em", question, "user-message");
     if (promptInput) promptInput.value = '';
 
-    const needsSearch = /ai là|thông tin|là gì|ai|tìm|thời tiết|tin tức|mới nhất|tiểu sử|nguyên văn|văn bản|hán việt|nối/i.test(question);
-    let searchContext = "";
-
-    if (needsSearch) {
-      searchContext = await searchWeb(question);
-    }
-
-    const finalPrompt = searchContext 
-      ? `[Thông tin tra cứu từ DuckDuckGo]:\n${searchContext}\n\n[Yêu cầu của người dùng]: ${question}`
-      : question;
-
     try {
       const response = await fetch('https://api.cohere.com/v1/chat', {
         method: 'POST',
@@ -108,9 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({
           model: 'command-r-plus-08-2024',
           preamble: sysPrompt,
-          message: finalPrompt,
+          message: question,
           chat_history: conversationHistory,
-          temperature: 0.3
+          temperature: 0.1 // Để thấp để đảm bảo tính chính xác kiến thức SGK
         })
       });
 
@@ -123,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const replyText = data.text;
 
-      // Cập nhật lịch sử chuẩn cấu trúc Cohere
+      // Cập nhật lịch sử hội thoại
       conversationHistory.push({ role: 'USER', message: question });
       conversationHistory.push({ role: 'CHATBOT', message: replyText });
 
@@ -131,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (error) {
       console.error("Lỗi API:", error);
-      appendMessage("Hệ thống", "Có lỗi xảy ra. Nhớ kiểm tra lại Cohere API Key hoặc kết nối mạng nhé!", "system-message");
+      appendMessage("Hệ thống", "Có lỗi xảy ra khi kết nối API. Em kiểm tra lại Key hoặc mạng nhé!", "system-message");
     }
   }
 
@@ -160,8 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
       sendBtn.addEventListener('click', handleSend);
     }
     if (promptInput) {
-      promptInput.removeEventListener('keypress', promptKeypressHandler);
-      promptInput.addEventListener('keypress', promptKeypressHandler);
+      promptInput.removeEventListener('keydown', promptKeypressHandler);
+      promptInput.addEventListener('keydown', promptKeypressHandler);
     }
     if (newChatBtn) {
       newChatBtn.removeEventListener('click', resetChat);

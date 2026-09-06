@@ -4,62 +4,62 @@
        Background
     ========================= */
 
-    --bg: #24171E;
+    --bg: #041f1e;
 
-    --surface: #321F28;
+    --surface: #0a2d2c;
 
-    --card: #3B2530;
+    --card: #113a38;
 
     /* =========================
        Main Colors
     ========================= */
 
-    --primary: #A05344;
+    --primary: #0d9488;
 
-    --secondary: #734046;
+    --secondary: #115e59;
 
-    --accent: #E79E4F;
+    --accent: #2dd4bf;
 
     /* =========================
        Text
     ========================= */
 
-    --text: #FFF5E8;
+    --text: #f0fdfa;
 
-    --text-secondary: #D9C4AF;
+    --text-secondary: #99f6e4;
 
     /* =========================
        Glass
     ========================= */
 
-    --glass: rgba(50, 31, 40, .60);
+    --glass: rgba(10, 45, 44, .60);
 
-    --glass-border: rgba(231, 158, 79, .10);
+    --glass-border: rgba(45, 212, 191, .15);
 
     /* =========================
        Gradient
     ========================= */
 
-    --gradient1: #24171E;
+    --gradient1: #041f1e;
 
-    --gradient2: #321F28;
+    --gradient2: #0a2d2c;
 
-    --gradient3: #734046;
+    --gradient3: #115e59;
 
-    --gradient4: #A05344;
+    --gradient4: #0d9488;
 
     /* =========================
        Blob
     ========================= */
 
-    --blob1: #734046;
+    --blob1: #0f766e;
 
-    --blob2: #E79E4F;
+    --blob2: #2dd4bf;
 
     /* =========================
        Shadow
     ========================= */
 
-    --shadow: rgba(0, 0, 0, .35);
+    --shadow: rgba(0, 0, 0, .45);
 
 }

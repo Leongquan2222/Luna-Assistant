@@ -83,21 +83,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (promptInput) promptInput.value = '';
 
     try {
-      const response = await fetch('https://api.cohere.com/v1/chat', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${COHERE_API_KEY}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'command-a-03-2025',
-          preamble: sysPrompt,
-          message: question,
-          chat_history: conversationHistory,
-          connectors:[{id:"web-search"}],
-          temperature: 0.1,// Để thấp để đảm bảo tính chính xác kiến thức SGK
-          
-        })
+    const response = await fetch('https://api.cohere.com/v2/chat', { // Cập nhật v2
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${COHERE_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    model: 'command-a-03-2025',
+    messages: [
+      { role: 'system', content: sysPrompt },
+      ...formattedHistory,
+      { role: 'user', content: question }
+    ],
+    // Cấu hình Search mới trên API v2
+    tools: [
+      {
+        type: "web_search"
+      }
+    ],
+    temperature: 0.1
+  })
+});
       });
 
       const data = await response.json();

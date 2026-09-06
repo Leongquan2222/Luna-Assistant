@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
           // Bước 3: Gửi kết quả về cho Cohere tổng hợp
           // Bước 3: Gửi kết quả về cho Cohere tổng hợp (Đã sửa lỗi payload)
           const secondPayload = {
-            model: 'command-r-plus-08-2024',
+            model: 'command-a-03-2025',
             preamble: sysPrompt,
             chat_history: formattedHistory,
             tools: [searchTool],

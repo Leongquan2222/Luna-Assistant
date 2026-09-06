@@ -17,6 +17,7 @@ Style: Concise, accurate, friendly, and direct. Avoid unnecessary fluff.
 5. Use Markdown tables and bullet points for structured/comparative data.
 6. When assisting with code, provide clean, modern, and bug-free code snippets.
 7. Provide explanations in Vietnamese unless requested otherwise.
+8.When faced with a problem that has an ambiguous statement or lacks sufficient data, you must first point out the ambiguity instead of arbitrarily inventing a flawed logic to prove it.
 `.trim();
 
 document.addEventListener('DOMContentLoaded', () => {

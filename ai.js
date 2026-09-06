@@ -22,7 +22,8 @@ Trình bày code sạch sẽ trong block Markdown \`\`\`language ... \`\`\` và 
 document.addEventListener('DOMContentLoaded', () => {
   let promptInput, sendBtn, chatBody, clearBtn, newChatBtn, historyList, searchHistoryInput;
 
-  const MISTRAL_API_KEY = localStorage.getItem('mistral_key') || "FVYswNhYiJNkmiwR3LqOJhEe5wx6pKJ8";
+  // Cấu hình Cohere API Key
+  const COHERE_API_KEY = localStorage.getItem('cohere_key') || "YOUR_COHERE_API_KEY";
 
   let conversationHistory = [];
   let currentSessionId = null;
@@ -130,8 +131,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     session.messages.forEach(msg => {
       appendMessage(msg.sender, msg.text, msg.roleClass);
-      const role = msg.sender === "Em" ? "user" : "assistant";
-      conversationHistory.push({ role: role, content: msg.text });
+      // Chuyển đổi sang định dạng role của Cohere (USER & CHATBOT)
+      const role = msg.sender === "Em" ? "USER" : "CHATBOT";
+      conversationHistory.push({ role: role, message: msg.text });
     });
 
     renderHistorySidebar();
@@ -159,7 +161,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- 3. TRA CỨU WEB & MISTRAL API ---
+  // --- 3. TRA CỨU WEB & COHERE API ---
   async function searchWeb(query) {
     try {
       const res = await fetch('http://localhost:3000/api/search', {
@@ -193,23 +195,19 @@ document.addEventListener('DOMContentLoaded', () => {
       ? `[Thông tin tra cứu từ DuckDuckGo]:\n${searchContext}\n\n[Yêu cầu của người dùng]: ${question}`
       : question;
 
-    conversationHistory.push({ role: 'user', content: finalPrompt });
-
     try {
-      const apiMessages = [
-        { role: 'system', content: sysPrompt },
-        ...conversationHistory
-      ];
-
-      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      // Gọi Cohere Chat API
+      const response = await fetch('https://api.cohere.com/v1/chat', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${MISTRAL_API_KEY}`,
+          'Authorization': `Bearer ${COHERE_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'mistral-small-latest', 
-          messages: apiMessages,
+          model: 'command-r-plus',
+          preamble: sysPrompt,
+          message: finalPrompt,
+          chatHistory: conversationHistory,
           temperature: 0.3
         })
       });
@@ -217,23 +215,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await response.json();
 
       if (!response.ok || data.error) {
-        console.error("Chi tiết lỗi từ Mistral:", data);
-        throw new Error(data.error?.message || "Lỗi kết nối Mistral API");
+        console.error("Chi tiết lỗi từ Cohere:", data);
+        throw new Error(data.message || "Lỗi kết nối Cohere API");
       }
       
-      const replyText = data.choices[0].message.content;
+      const replyText = data.text;
 
-      // Trả lại câu hỏi gốc (ẩn context tra cứu)
-      conversationHistory[conversationHistory.length - 1].content = question;
-      conversationHistory.push({ role: 'assistant', content: replyText });
+      // Lưu cuộc trò chuyện vào mảng history theo định dạng Cohere
+      conversationHistory.push({ role: 'USER', message: question });
+      conversationHistory.push({ role: 'CHATBOT', message: replyText });
 
       appendMessage("Luna", replyText, "luna-message");
       saveToLocalStorage(question, replyText);
 
     } catch (error) {
       console.error("Lỗi API:", error);
-      appendMessage("Hệ thống", "Có lỗi xảy ra. Nhớ bật server backend và kiểm tra lại API Key nhé!", "system-message");
-      conversationHistory.pop();
+      appendMessage("Hệ thống", "Có lỗi xảy ra. Nhớ bật server backend và kiểm tra lại Cohere API Key nhé!", "system-message");
     }
   }
 

@@ -24,4 +24,5 @@ $$(a + b)^2 = (a + b)(a + b)$$
 $$= a(a + b) + b(a + b)$$
 $$= a^2 + ab + ab + b^2$$
 $$= a^2 + 2ab + b^2$$
+-Khi nhận được bài toán có đề bài mơ hồ hoặc thiếu dữ kiện, phải chỉ ra điểm chưa rõ ràng trước chứ không tự ý bịa ra logic chứng minh sai.
 `.trim();

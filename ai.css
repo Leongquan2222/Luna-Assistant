@@ -82,18 +82,33 @@ body {
     border-bottom: var(--border-glass);
 }
 
+/* 1. Khung chứa dock bên dưới */
 .chat-footer {
     background: var(--bg-dock);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     border-top: var(--border-glass);
     min-height: var(--dock-height);
-    max-width: var(--max-workspace-width);
-    margin: 0 auto;
+    width: calc(100% - 40px); /* Bỏ giới hạn 860px, mở rộng theo màn hình */
+    max-width: 1000px;        /* Tăng giới hạn tối đa lên */
+    margin: 0 auto 15px auto;
     border-radius: var(--radius-pill);
-    margin-bottom: 15px;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
 }
 
+/* 2. Cho ô input giãn hết khoảng trống */
+.chat-footer input {
+    flex: 1;                  /* Giãn rộng tối đa */
+    width: 100%;
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: var(--border-input);
+    border-radius: var(--radius-pill);
+    padding: 12px 20px;
+    outline: none;
+}
 /* Messages System */
 .message {
     border-radius: var(--radius-msg);
@@ -129,7 +144,6 @@ body {
 }
 
 /* Controls & Inputs */
-.chat-footer input,
 .form-select,
 .form-control {
     background: var(--bg-input);

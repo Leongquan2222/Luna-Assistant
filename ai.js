@@ -19,7 +19,7 @@ Nhiệm vụ: Hướng dẫn người dùng học tập (Toán, Tiếng Anh, L�
 4. Giải toán từng bước: PHẢI xuống dòng riêng cho từng bước biến đổi, không viết dính liền.
 
 [ĐỊNH DẠNG LẬP TRÌNH]:
-Trình bày code sạch sẽ, chuẩn tối ưu trong block Markdown ```language ... ``` và giải thích logic cực kỳ ngắn gọn, sắc bén.
+Trình bày code sạch sẽ, chuẩn tối ưu trong block Markdown "```language```" và giải thích logic cực kỳ ngắn gọn, sắc bén.
 `.trim();
 
 document.addEventListener('DOMContentLoaded', () => {

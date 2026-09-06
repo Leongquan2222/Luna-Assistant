@@ -3,7 +3,7 @@ Bạn là Luna - một nữ gia sư AI thông minh, sắc sảo và điềm tĩn
 Nhiệm vụ: Hướng dẫn người dùng học tập (Toán, Tiếng Anh, Lập trình, Khoa học).
 
 [QUY TẮC PHẢN HỒI & XƯNG HÔ - BẮT BUỘC]:
-1. Xưng hô tuyệt đối: Luôn xưng "chị" (hoặc "Luna") và gọi người dùng là "em". BẤT KỂ người dùng xưng hô thế nào, KHÔNG BẢO GIỜ xưng "em" hay dùng từ kính ngữ bề dưới như "ạ", "dạ".
+1. Xưng hô tuyệt đối: Luôn xưng "chị" (hoặc "Luna") và gọi người dùng là "em". BẤT KỂ người dùng xưng hô thế nào, KHÔNG BAO GIỜ xưng "em" hay dùng từ kính ngữ bề dưới như "ạ", "dạ".
 2. Phong cách: Ngắn gọn, súc tích, đi thẳng vào vấn đề, rõ ràng, không dài dòng lê thê.
 3. Không biết thông tin: Thừa nhận thẳng thắn và đề xuất hướng tìm kiếm.
 
@@ -14,17 +14,12 @@ Nhiệm vụ: Hướng dẫn người dùng học tập (Toán, Tiếng Anh, L�
 4. Giải toán từng bước: PHẢI xuống dòng riêng cho từng bước biến đổi, không viết dính liền.
 
 [ĐỊNH DẠNG LẬP TRÌNH]:
-Trình bày code sạch sẽ trong block Markdown \`\`\`language ... \`\`\` và giải thích logic ngắn gọn.
+Tr trình bày code sạch sẽ trong block Markdown \`\`\`language ... \`\`\` và giải thích logic ngắn gọn.
+
 [QUY TẮC BẮT BUỘC - TRUY XUẤT VĂN BẢN VĂN HỌC/LỊCH SỬ]:
 - Tuyệt đối KHÔNG TỰ BỊA ra nguyên văn Hán-Việt, trích đoạn thơ, hay văn bản lịch sử nếu không có trong dữ liệu tra cứu chuẩn.
-- Nếu được yêu cầu "nguyên văn Hán-Việt" hoặc "phiên âm Hán-Việt" mà chưa có context từ Search, BẮT BUỘC phải thực hiện tìm kiếm trên web trước khi trả lời.y
-User: Chứng minh $(a+b)^2 = a^2 + 2ab + b^2$
-Luna: Ta có:
-$$(a + b)^2 = (a + b)(a + b)$$
-$$= a(a + b) + b(a + b)$$
-$$= a^2 + ab + ab + b^2$$
-$$= a^2 + 2ab + b^2$$
--Khi nhận được bài toán có đề bài mơ hồ hoặc thiếu dữ kiện, phải chỉ ra điểm chưa rõ ràng trước chứ không tự ý bịa ra logic chứng minh sai.
+- Nếu được yêu cầu "nguyên văn Hán-Việt" hoặc "phiên âm Hán-Việt" mà chưa có context từ Search, BẮT BUỘC phải thực hiện tìm kiếm trên web trước khi trả lời.
+- Khi nhận được bài toán có đề bài mơ hồ hoặc thiếu dữ kiện, phải chỉ ra điểm chưa rõ ràng trước chứ không tự ý bịa ra logic chứng minh sai.
 `.trim();
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -32,7 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Key Cohere & Tavily API Config
   const COHERE_API_KEY = localStorage.getItem('cohere_key') || "bUBuU1bXq3kB5aaK5eiC6K0wiBpigLts1BicWwWg";
-  const TAVILY_API_KEY = "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"; // Dán Key Tavily vào đây
+  const TAVILY_API_KEY = "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";
 
   let conversationHistory = [];
 
@@ -117,8 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- HÀM GỬI TIN NHẮN TỚI COHERE V1 + TAVILY FUNCTION CALLING ---
-  // --- HÀM GỬI TIN NHẮN TỚI COHERE V1 + TAVILY (ĐÃ FIX LỖI CONTEXT) ---
+  // --- HÀM GỬI TIN NHẮN TỚI COHERE V1 + TAVILY ---
   async function handleSend() {
     const question = promptInput ? promptInput.value.trim() : '';
     if (!question) return;
@@ -165,7 +159,6 @@ document.addEventListener('DOMContentLoaded', () => {
           const searchResults = await fetchTavilyResults(searchQuery);
 
           // BƯỚC 3: Gửi kết quả Tool về Cohere để tổng hợp
-          // Lưu ý: Đưa câu hỏi gốc vào chat_history và KHÔNG gửi trường message
           const updatedHistory = [
             ...formattedHistory,
             { role: 'USER', message: question }
@@ -201,20 +194,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!response.ok || !data.text) {
         throw new Error(data.message || "Lỗi kết nối Cohere API");
       }
-
-      const replyText = data.text;
-
-      // Cập nhật lịch sử hội thoại chuẩn
-      conversationHistory.push({ role: 'USER', message: question });
-      conversationHistory.push({ role: 'CHATBOT', message: replyText });
-
-      appendMessage("Luna", replyText, "luna-message");
-
-    } catch (error) {
-      console.error("Lỗi API:", error);
-      appendMessage("Hệ thống", "Có lỗi xảy ra khi kết nối API. Em kiểm tra lại Key hoặc mạng nhé!", "system-message");
-    }
-  }
 
       const replyText = data.text;
 

@@ -9,7 +9,7 @@ Nhiệm vụ: Hướng dẫn người dùng học tập (Toán, Tiếng Anh, L�
 2. KHÔNG DÙNG TỪ KÍNH NGỮ BỀ DƯỚI: Tuyệt đối KHÔNG bao giờ dùng từ "ạ", "dạ" ở bất kỳ đâu.
 3. Phong cách: Ngắn gọn, súc tích, đi thẳng vào vấn đề, rõ ràng, không dài dòng lê thê.
 4. Lịch sử/Văn học/Khoa học: Dựa vào tri thức chuẩn xác, KHÔNG tự bịa đặt hay râu ông nọ chắp cằm bà kia.
-5.Trả lời linh hoạt theo ngôn ngữ người dùng nói.
+5. Trả lời linh hoạt theo ngôn ngữ người dùng nói.
 
 [ĐỊNH DẠNG TOÁN / KHOA HỌC]:
 1. BẮT BUỘC dùng LaTeX cho công thức.
@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- HÀM GỬI TIN NHẮN TỚI COHERE API ---// --- HÀM GỬI TIN NHẮN TỚI COHERE API (V1 SEARCH TÍCH HỢP) ---
+  // --- HÀM GỬI TIN NHẮN TỚI COHERE API (V1 SEARCH TÍCH HỢP) ---
   async function handleSend() {
     const question = promptInput ? promptInput.value.trim() : '';
     if (!question) return;
@@ -82,7 +82,6 @@ document.addEventListener('DOMContentLoaded', () => {
     appendMessage("Em", question, "user-message");
     if (promptInput) promptInput.value = '';
 
-    // Định dạng lịch sử cuộc trò chuyện theo chuẩn v1
     const formattedHistory = conversationHistory.map(item => ({
       role: item.role === 'USER' ? 'USER' : 'CHATBOT',
       message: item.message
@@ -96,11 +95,11 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'command-r-plus-08-2024', // Dòng model hỗ trợ search v1 rất mượt
+          model: 'command-r-plus-08-2024',
           preamble: sysPrompt,
           message: question,
           chat_history: formattedHistory,
-          connectors: [{ id: "web-search" }], // Kích hoạt Web Search
+          connectors: [{ id: "web-search" }],
           temperature: 0.1
         })
       });
@@ -125,22 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
       appendMessage("Hệ thống", "Có lỗi xảy ra khi kết nối API. Em kiểm tra lại Key hoặc mạng nhé!", "system-message");
     }
   }
-  
 
-      // Lấy câu trả lời đúng cấu trúc API v2
-      const replyText = data.message.content[0].text;
-
-      // Cập nhật lịch sử hội thoại
-      conversationHistory.push({ role: 'USER', message: question });
-      conversationHistory.push({ role: 'CHATBOT', message: replyText });
-
-      appendMessage("Luna", replyText, "luna-message");
-
-    } catch (error) {
-      console.error("Lỗi API:", error);
-      appendMessage("Hệ thống", "Có lỗi xảy ra khi kết nối API. Em kiểm tra lại Key hoặc mạng nhé!", "system-message");
-    }
-  }
   function resetChat() {
     if (chatBody) {
       chatBody.innerHTML = `

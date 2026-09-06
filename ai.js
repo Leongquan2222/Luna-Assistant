@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'command-r-plus-08-2024',
+          model: 'command-a-03-2025',
           preamble: sysPrompt,
           message: question,
           chat_history: conversationHistory,

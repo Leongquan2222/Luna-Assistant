@@ -1,6 +1,6 @@
-/* ==========================================
-   AURA ASSISTANT - OCEAN DOCK (AI.CSS)
-   ========================================== */
+/* =========================================
+   LUNA ASSISTANT - CUSTOM GLASS SYSTEM THEME
+   ========================================= */
 
 /* 1. GLOBAL VARIABLES SYSTEM */
 :root {
@@ -37,314 +37,188 @@
     --max-workspace-width: 860px;
 }
 
-/* 2. BASE RESET */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-html, body {
-    width: 100%;
-    height: 100%;
-}
-
+/* Base Style */
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
     background-color: var(--bg-main);
     color: var(--text-primary);
-    overflow: hidden;
-    position: relative;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
 }
 
-button, input {
-    font-family: inherit;
-    outline: none;
-    border: none;
+/* Sidebar */
+.sidebar {
+    background: var(--bg-surface);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-right: var(--border-glass);
 }
 
-button {
-    cursor: pointer;
-}
-
-a {
-    text-decoration: none;
+.logo {
     color: var(--accent-blue);
+    font-weight: 700;
+    font-size: 1.25rem;
+    letter-spacing: 0.5px;
 }
 
-img {
-    user-select: none;
+/* Main Content Workspace Limit */
+.main-content {
+    background-color: var(--bg-main);
 }
 
-/* 3. AMBIENT GLOW ORBS */
-.bg-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(120px);
-    z-index: 0;
-    pointer-events: none;
+.chat-body {
+    background: transparent;
+    max-width: var(--max-workspace-width);
+    margin: 0 auto;
+    width: 100%;
 }
 
-.orb-1 {
-    width: 450px;
-    height: 450px;
-    background: rgba(56, 189, 248, 0.12);
-    top: -120px;
-    left: -100px;
-}
-
-.orb-2 {
-    width: 500px;
-    height: 500px;
-    background: rgba(129, 140, 248, 0.1);
-    bottom: -150px;
-    right: -150px;
-}
-
-/* 4. TOP DOCK NAVIGATION */
-.top-dock {
-    position: relative;
-    z-index: 10;
-    height: var(--dock-height);
-    background: var(--bg-dock);
+/* Header & Footer Dock */
+.chat-header {
+    background: var(--bg-surface);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     border-bottom: var(--border-glass);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 40px;
 }
 
-.brand-logo {
-    font-size: 17px;
-    font-weight: 700;
-    letter-spacing: 0.8px;
-    background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.dock-menu {
-    display: flex;
-    gap: 10px;
-}
-
-.dock-item {
-    color: var(--text-secondary);
-    font-size: 14px;
-    font-weight: 500;
-    padding: 8px 18px;
-    border-radius: 20px;
-    transition: all 0.2s ease;
-}
-
-.dock-item.active,
-.dock-item:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.btn-clear {
-    background: rgba(255, 255, 255, 0.05);
-    border: var(--border-glass);
-    color: var(--text-secondary);
-    padding: 8px 16px;
-    border-radius: var(--radius-btn);
-    transition: all 0.2s ease;
-}
-
-.btn-clear:hover {
-    background: var(--accent-danger-bg);
-    color: var(--accent-danger);
-    border-color: rgba(239, 68, 68, 0.3);
-}
-
-/* 5. WORKSPACE & CHAT STREAM */
-.workspace {
-    position: relative;
-    z-index: 5;
-    flex: 1;
+.chat-footer {
+    background: var(--bg-dock);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-top: var(--border-glass);
+    min-height: var(--dock-height);
     max-width: var(--max-workspace-width);
-    width: 100%;
     margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    padding: 20px 20px 25px;
-    height: calc(100vh - var(--dock-height));
+    border-radius: var(--radius-pill);
+    margin-bottom: 15px;
 }
 
-.chat-stream,
-.chat-body {
-    flex: 1;
-    overflow-y: auto;
-    padding-right: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    margin-bottom: 20px;
-}
-
-/* 6. MESSAGES & BUBBLES */
+/* Messages System */
 .message {
-    max-width: 80%;
-    padding: 14px 18px;
     border-radius: var(--radius-msg);
-    font-size: 14.5px;
+    padding: 14px 18px;
+    max-width: 82%;
     line-height: 1.6;
-    animation: messageShow 0.25s ease-out;
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+}
+
+.luna-message {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: var(--border-glass);
+    margin-right: auto;
 }
 
 .user-message {
-    align-self: flex-end;
     background: var(--accent-green);
     color: #ffffff;
+    margin-left: auto;
     border-bottom-right-radius: 4px;
 }
 
-.luna-message,
-.assistant-message {
-    align-self: flex-start;
-    background: var(--bg-surface);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: var(--border-glass);
-    border-bottom-left-radius: 4px;
-}
-
-.system-message {
-    align-self: center;
-    background: transparent;
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-style: italic;
-}
-
-/* 7. FLOATING INPUT PILL */
-.input-wrapper,
-.chat-footer {
-    background: var(--bg-surface);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: var(--border-input);
-    border-radius: var(--radius-pill);
-    padding: 8px 10px 8px 20px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-}
-
-.input-wrapper input,
-.chat-footer input {
-    flex: 1;
-    background: transparent;
-    border: none;
-    color: var(--text-primary);
-    font-size: 15px;
-}
-
-.input-wrapper input::placeholder,
-.chat-footer input::placeholder {
-    color: var(--text-secondary);
-}
-
-.btn-circle {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: none;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
-    transition: transform 0.15s ease, background 0.15s ease;
-}
-
-.btn-circle:hover {
-    transform: scale(1.05);
-}
-
-.btn-img {
-    background: rgba(255, 255, 255, 0.08);
-    border: var(--border-glass);
-}
-
-.btn-img:hover {
-    background: rgba(56, 189, 248, 0.2);
-}
-
-.btn-send {
-    background: var(--accent-green);
-}
-
-.btn-send:hover {
+.user-message:hover {
     background: var(--accent-green-hover);
 }
 
-/* 8. GENERATED IMAGE PREVIEW */
-.generated-image-container {
-    background: var(--bg-input);
-    border: var(--border-glass);
-    border-radius: var(--radius-btn);
-    padding: 12px;
-    margin-top: 8px;
-    text-align: center;
-}
-
-.generated-image-container p {
-    font-size: 13px;
+.system-message {
     color: var(--text-secondary);
-    margin-bottom: 8px;
+    font-style: italic;
+    font-size: 0.875rem;
 }
 
-.generated-image-container img {
-    max-width: 100%;
-    max-height: 400px;
-    border-radius: 8px;
-    display: block;
-    margin: 0 auto;
-    object-fit: cover;
-    transition: transform 0.2s ease;
+/* Controls & Inputs */
+.chat-footer input,
+.form-select,
+.form-control {
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border: var(--border-input);
+    border-radius: var(--radius-pill);
+    padding: 10px 18px;
 }
 
-.generated-image-container img:hover {
-    transform: scale(1.02);
+.chat-footer input::placeholder,
+.form-control::placeholder {
+    color: var(--text-secondary);
 }
 
-.btn-download-img {
-    display: inline-block;
-    margin-top: 8px;
-    padding: 6px 14px;
-    font-size: 12px;
-    color: var(--accent-blue);
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    transition: background 0.2s ease;
+.chat-footer input:focus,
+.form-select:focus,
+.form-control:focus {
+    background: var(--bg-input);
+    color: var(--text-primary);
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 0.2rem rgba(56, 189, 248, 0.2);
 }
 
-.btn-download-img:hover {
-    background: rgba(56, 189, 248, 0.2);
+/* Action Buttons */
+.btn-primary {
+    background-color: var(--accent-green);
+    border-color: var(--accent-green);
+    color: #ffffff;
+    border-radius: var(--radius-btn);
 }
 
-/* 9. SCROLLBAR & ANIMATIONS */
+.btn-primary:hover {
+    background-color: var(--accent-green-hover);
+    border-color: var(--accent-green-hover);
+}
+
+#sendBtn {
+    border-radius: var(--radius-pill);
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.btn-danger, .clear-history-btn {
+    background-color: var(--accent-danger-bg);
+    color: var(--accent-danger);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: var(--radius-btn);
+}
+
+.btn-danger:hover {
+    background-color: var(--accent-danger);
+    color: #ffffff;
+}
+
+/* History Sidebar Items */
+.history-item {
+    background: transparent;
+    border-bottom: var(--border-glass) !important;
+    border-radius: var(--radius-btn);
+    transition: all 0.2s ease;
+}
+
+.history-item:hover {
+    background: var(--bg-card);
+}
+
+.history-item .fw-bold {
+    color: var(--text-primary);
+}
+
+.history-item .text-muted {
+    color: var(--text-secondary) !important;
+}
+
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-    width: 5px;
+    width: 6px;
 }
-
+::-webkit-scrollbar-track {
+    background: var(--bg-main);
+}
 ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
+    background: var(--bg-card);
+    border-radius: 3px;
 }
-
-@keyframes messageShow {
-    from {
-        opacity: 0;
-        transform: translateY(6px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-purple);
 }

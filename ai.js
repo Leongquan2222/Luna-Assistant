@@ -9,15 +9,15 @@ Style: Concise, accurate, friendly, and direct. Avoid unnecessary fluff.
 
 [INSTRUCTIONS & FORMATTING]
 1. Answer directly and concisely without verbose intro/outro setups.
-2. Auto-correct user typos/misspellings gracefully if detected (e.g., "gynasium" -> "gymnasium").
-3. Avoid making up fake facts (hallucinations) for unknown songs, tracks, or niche topics. If uncertain, state it directly.
+2. Auto-correct user typos/misspellings gracefully if detected.
+3. Avoid making up fake facts for unknown songs, tracks, or niche topics. If uncertain, state it directly.
 4. Use LaTeX for math/physics/chemistry formulas:
    - Inline math: $formula$
    - Block math: $$formula$$
 5. Use Markdown tables and bullet points for structured/comparative data.
 6. When assisting with code, provide clean, modern, and bug-free code snippets.
 7. Provide explanations in Vietnamese unless requested otherwise.
-8.When faced with a problem that has an ambiguous statement or lacks sufficient data, you must first point out the ambiguity instead of arbitrarily inventing a flawed logic to prove it.
+8. When faced with a problem that has an ambiguous statement or lacks sufficient data, you must first point out the ambiguity instead of arbitrarily inventing a flawed logic to prove it.
 `.trim();
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -67,6 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
           { sender: "Bạn", text: userMsg, roleClass: "user-message" },
           { sender: "Luna", text: aiMsg, roleClass: "luna-message" }
         );
+        // Đẩy phiên chat vừa cập nhật lên đầu danh sách
+        const [updatedSession] = savedHistory.splice(sessionIndex, 1);
+        updatedSession.timestamp = timestamp;
+        savedHistory.unshift(updatedSession);
       }
     }
 
@@ -91,11 +95,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     filtered.forEach(session => {
       const item = document.createElement('div');
-      item.className = 'history-item p-2 mb-1 border-bottom cursor-pointer hover-bg-light';
+      const isActive = session.id === currentSessionId ? 'active-session bg-secondary bg-opacity-25' : '';
+      item.className = `history-item p-2 mb-1 border-bottom cursor-pointer rounded ${isActive}`;
       item.style.cursor = 'pointer';
       item.innerHTML = `
-        <div class="fw-bold text-truncate">${session.title}</div>
-        <div class="text-muted small">${session.timestamp}</div>
+        <div class="fw-bold text-truncate text-light">${session.title}</div>
+        <div class="text-muted small" style="font-size: 0.75rem;">${session.timestamp}</div>
       `;
       item.addEventListener('click', () => loadChatSession(session));
       historyList.appendChild(item);
@@ -137,12 +142,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const role = msg.sender === "Bạn" ? "USER" : "CHATBOT";
       conversationHistory.push({ role: role, message: msg.text });
     });
+
+    renderHistorySidebar();
   }
 
   function resetChat() {
-    if (chatBody) chatBody.innerHTML = '';
+    if (chatBody) {
+      chatBody.innerHTML = `
+        <div class="message luna-message mb-3">
+          <strong>Luna:</strong>
+          <div>Chào em, em cần chị hỗ trợ gì hôm nay?</div>
+        </div>
+      `;
+    }
     conversationHistory = [];
     currentSessionId = null;
+    renderHistorySidebar();
   }
 
   function clearAllHistory() {
@@ -242,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'tiny-aya-global',
+          model: 'command-r-plus-08-2024',
           preamble: sysPrompt,
           message: "[HỆ THỐNG]: Hãy tiếp tục câu trả lời còn dở dang một cách chi tiết và logic.",
           chat_history: conversationHistory,

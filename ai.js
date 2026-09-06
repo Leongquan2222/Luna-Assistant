@@ -75,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- HÀM GỬI TIN NHẮN TỚI COHERE API ---
+  // --- HÀM GỬI TIN NHẮN TỚI COHERE API (V2 REFACTORED) ---
   async function handleSend() {
     const question = promptInput ? promptInput.value.trim() : '';
     if (!question) return;
@@ -82,39 +83,42 @@ document.addEventListener('DOMContentLoaded', () => {
     appendMessage("Em", question, "user-message");
     if (promptInput) promptInput.value = '';
 
+    // Convert lịch sử hội thoại sang định dạng chuẩn Cohere v2
+    const formattedHistory = conversationHistory.map(item => ({
+      role: item.role === 'USER' ? 'user' : 'assistant',
+      content: item.message
+    }));
+
     try {
-    const response = await fetch('https://api.cohere.com/v2/chat', { // Cập nhật v2
-  method: 'POST',
-  headers: {
-    'Authorization': `Bearer ${COHERE_API_KEY}`,
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    model: 'command-a-03-2025',
-    messages: [
-      { role: 'system', content: sysPrompt },
-      ...formattedHistory,
-      { role: 'user', content: question }
-    ],
-    // Cấu hình Search mới trên API v2
-    tools: [
-      {
-        type: "web_search"
-      }
-    ],
-    temperature: 0.1
-  })
-});
+      const response = await fetch('https://api.cohere.com/v2/chat', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${COHERE_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'command-a-03-2025',
+          messages: [
+            { role: 'system', content: sysPrompt },
+            ...formattedHistory,
+            { role: 'user', content: question }
+          ],
+          tools: [
+            { type: "web_search" }
+          ],
+          temperature: 0.1
+        })
       });
 
       const data = await response.json();
 
-      if (!response.ok || data.message) {
+      if (!response.ok || data.message?.content === undefined) {
         console.error("Chi tiết lỗi từ Cohere:", data);
         throw new Error(data.message || "Lỗi kết nối Cohere API");
       }
 
-      const replyText = data.text;
+      // Lấy câu trả lời đúng cấu trúc API v2
+      const replyText = data.message.content[0].text;
 
       // Cập nhật lịch sử hội thoại
       conversationHistory.push({ role: 'USER', message: question });
@@ -127,7 +131,6 @@ document.addEventListener('DOMContentLoaded', () => {
       appendMessage("Hệ thống", "Có lỗi xảy ra khi kết nối API. Em kiểm tra lại Key hoặc mạng nhé!", "system-message");
     }
   }
-
   function resetChat() {
     if (chatBody) {
       chatBody.innerHTML = `

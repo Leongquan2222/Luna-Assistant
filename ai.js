@@ -118,6 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- HÀM GỬI TIN NHẮN TỚI COHERE V1 + TAVILY FUNCTION CALLING ---
+  // --- HÀM GỬI TIN NHẮN TỚI COHERE V1 + TAVILY (ĐÃ FIX LỖI CONTEXT) ---
   async function handleSend() {
     const question = promptInput ? promptInput.value.trim() : '';
     if (!question) return;
@@ -125,15 +126,16 @@ document.addEventListener('DOMContentLoaded', () => {
     appendMessage("Em", question, "user-message");
     if (promptInput) promptInput.value = '';
 
+    // Chuẩn hóa lịch sử trò chuyện
     const formattedHistory = conversationHistory.map(item => ({
       role: item.role === 'USER' ? 'USER' : 'CHATBOT',
       message: item.message
     }));
 
     try {
-      // Bước 1: Gửi request ban đầu cho Cohere v1
-      let payload = {
-        model: 'command-a-03-2025',
+      // BƯỚC 1: Gửi request ban đầu cho Cohere
+      const initialPayload = {
+        model: 'command-r-plus-08-2024',
         preamble: sysPrompt,
         message: question,
         chat_history: formattedHistory,
@@ -147,27 +149,32 @@ document.addEventListener('DOMContentLoaded', () => {
           'Authorization': `Bearer ${COHERE_API_KEY}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(initialPayload)
       });
 
       let data = await response.json();
 
-      // Bước 2: Kiểm tra nếu Cohere yêu cầu tra cứu web
+      // BƯỚC 2: Kiểm tra nếu Cohere yêu cầu Tool Call (Search)
       if (data.tool_calls && data.tool_calls.length > 0) {
         const call = data.tool_calls[0];
         if (call.name === 'web_search') {
           const searchQuery = call.parameters.query;
-          console.log("Luna đang tra cứu Tavily với từ khóa:", searchQuery);
-          
-          // Gọi Tavily API lấy thông tin
+          console.log("Luna đang tra cứu Tavily:", searchQuery);
+
+          // Gọi Tavily lấy dữ liệu
           const searchResults = await fetchTavilyResults(searchQuery);
 
-          // Bước 3: Gửi kết quả về cho Cohere tổng hợp
-          // Bước 3: Gửi kết quả về cho Cohere tổng hợp (Đã sửa lỗi payload)
+          // BƯỚC 3: Gửi kết quả Tool về Cohere để tổng hợp
+          // Lưu ý: Đưa câu hỏi gốc vào chat_history và KHÔNG gửi trường message
+          const updatedHistory = [
+            ...formattedHistory,
+            { role: 'USER', message: question }
+          ];
+
           const secondPayload = {
-            model: 'command-a-03-2025',
+            model: 'command-r-plus-08-2024',
             preamble: sysPrompt,
-            chat_history: formattedHistory,
+            chat_history: updatedHistory,
             tools: [searchTool],
             tool_results: [
               {
@@ -192,9 +199,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (!response.ok || !data.text) {
-        console.error("Chi tiết lỗi từ Cohere:", data);
         throw new Error(data.message || "Lỗi kết nối Cohere API");
       }
+
+      const replyText = data.text;
+
+      // Cập nhật lịch sử hội thoại chuẩn
+      conversationHistory.push({ role: 'USER', message: question });
+      conversationHistory.push({ role: 'CHATBOT', message: replyText });
+
+      appendMessage("Luna", replyText, "luna-message");
+
+    } catch (error) {
+      console.error("Lỗi API:", error);
+      appendMessage("Hệ thống", "Có lỗi xảy ra khi kết nối API. Em kiểm tra lại Key hoặc mạng nhé!", "system-message");
+    }
+  }
 
       const replyText = data.text;
 

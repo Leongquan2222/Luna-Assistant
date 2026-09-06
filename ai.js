@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'command-r-plus',
+          model: 'command-r-plus-08-2024',
           preamble: sysPrompt,
           message: finalPrompt,
           chat_history: conversationHistory,

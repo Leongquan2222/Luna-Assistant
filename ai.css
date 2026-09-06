@@ -49,35 +49,31 @@ html, body {
     position: relative;
 }
 
-/* Khung cuộn tin nhắn */
+/* Đảm bảo khung chứa cuộn hoạt động chuẩn flexbox */
 .chat-container {
     flex: 1;
-    height: 100%;
-    overflow-y: auto; /* Cho phép cuộn dọc */
+    width: 100%;
+    height: 100vh;
+    overflow-y: auto !important;
     overflow-x: hidden;
-    padding: 100px 20px 120px; /* Top chừa space cho Header, Bottom chừa space cho Input Dock */
+    /* Tăng padding-bottom lên 160px để tin nhắn cuối luôn nổi hẳn lên trên Input Dock */
+    padding: 100px 20px 160px; 
     display: flex;
     justify-content: center;
+    align-items: flex-start;
     position: relative;
     z-index: 1;
 }
 
-/* Hiện thanh cuộn mỏng đẹp mắt */
-.chat-container::-webkit-scrollbar {
-    width: 6px;
-}
-
-.chat-container::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.chat-container::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-}
-
-.chat-container::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.4);
+/* Ép chat-body tự co giãn chiều cao theo nội dung */
+.chat-body {
+    width: 100%;
+    max-width: 850px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    height: auto !important;
+    min-height: min-content;
 }
 .bg-blob {
     position: absolute;

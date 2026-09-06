@@ -34,7 +34,6 @@
     --radius-msg: 16px;
     --radius-btn: 10px;
     --dock-height: 65px;
-    --max-workspace-width: 860px;
 }
 
 /* Base Style */
@@ -62,19 +61,22 @@ body {
     letter-spacing: 0.5px;
 }
 
-/* Main Content Workspace Limit */
+/* Main Content Workspace */
 .main-content {
     background-color: var(--bg-main);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
 }
 
 .chat-body {
     background: transparent;
-    max-width: var(--max-workspace-width);
-    margin: 0 auto;
     width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
 }
 
-/* Header & Footer Dock */
+/* Header */
 .chat-header {
     background: var(--bg-surface);
     backdrop-filter: var(--glass-blur);
@@ -82,33 +84,38 @@ body {
     border-bottom: var(--border-glass);
 }
 
-/* 1. Khung chứa dock bên dưới */
+/* Footer & Input Area Fix */
 .chat-footer {
-    background: var(--bg-dock);
+    background: var(--bg-dock) !important;
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
-    border-top: var(--border-glass);
+    border: var(--border-glass) !important;
     min-height: var(--dock-height);
-    width: calc(100% - 40px); /* Bỏ giới hạn 860px, mở rộng theo màn hình */
-    max-width: 1000px;        /* Tăng giới hạn tối đa lên */
-    margin: 0 auto 15px auto;
-    border-radius: var(--radius-pill);
-    padding: 8px 16px;
-    display: flex;
-    align-items: center;
+    width: calc(100% - 40px) !important;
+    max-width: 1000px !important;
+    margin: 10px auto 20px auto !important;
+    border-radius: var(--radius-pill) !important;
+    padding: 8px 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    box-sizing: border-box !important;
 }
 
-/* 2. Cho ô input giãn hết khoảng trống */
-.chat-footer input {
-    flex: 1;                  /* Giãn rộng tối đa */
-    width: 100%;
-    background: var(--bg-input);
-    color: var(--text-primary);
-    border: var(--border-input);
-    border-radius: var(--radius-pill);
-    padding: 12px 20px;
-    outline: none;
+.chat-footer input#prompt,
+.chat-footer input.form-control {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    max-width: none !important;
+    background: var(--bg-input) !important;
+    color: var(--text-primary) !important;
+    border: var(--border-input) !important;
+    border-radius: var(--radius-pill) !important;
+    padding: 12px 20px !important;
+    outline: none !important;
+    margin: 0 !important;
 }
+
 /* Messages System */
 .message {
     border-radius: var(--radius-msg);
@@ -143,7 +150,7 @@ body {
     font-size: 0.875rem;
 }
 
-/* Controls & Inputs */
+/* Controls & Standard Form Inputs */
 .form-select,
 .form-control {
     background: var(--bg-input);
@@ -151,7 +158,7 @@ body {
     border: var(--border-input);
     border-radius: var(--radius-pill);
     padding: 10px 18px;
-    width:300%;
+    width: 100%;
 }
 
 .chat-footer input::placeholder,
@@ -182,13 +189,14 @@ body {
 }
 
 #sendBtn {
-    border-radius: var(--radius-pill);
-    width: 42px;
-    height: 42px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
+    flex: 0 0 42px !important;
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 50% !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 .btn-danger, .clear-history-btn {

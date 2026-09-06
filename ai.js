@@ -157,10 +157,10 @@ document.addEventListener('DOMContentLoaded', () => {
           const searchResults = await fetchTavilyResults(searchQuery);
 
           // Bước 3: Gửi kết quả về cho Cohere tổng hợp
+          // Bước 3: Gửi kết quả về cho Cohere tổng hợp (Đã sửa lỗi payload)
           const secondPayload = {
             model: 'command-r-plus-08-2024',
             preamble: sysPrompt,
-            message: question,
             chat_history: formattedHistory,
             tools: [searchTool],
             tool_results: [

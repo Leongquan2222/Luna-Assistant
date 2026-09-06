@@ -24,11 +24,54 @@ Trình bày code sạch sẽ trong block Markdown \`\`\`language ... \`\`\` và 
 document.addEventListener('DOMContentLoaded', () => {
   let promptInput, sendBtn, chatBody, newChatBtn;
 
-  // Lấy API Key Cohere từ localStorage hoặc gán Key mặc định
+  // Key Cohere & Tavily API Config
   const COHERE_API_KEY = localStorage.getItem('cohere_key') || "bUBuU1bXq3kB5aaK5eiC6K0wiBpigLts1BicWwWg";
+  const TAVILY_API_KEY = "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"; // Dán Key Tavily vào đây
 
-  // Lịch sử cuộc trò chuyện chuẩn Cohere ({ role: 'USER' | 'CHATBOT', message: '' })
   let conversationHistory = [];
+
+  // Khai báo cấu trúc Tool cho Cohere API v1
+  const searchTool = {
+    name: "web_search",
+    description: "Tìm kiếm thông tin thực tế khi người dùng hỏi tin tức, văn bản pháp luật, dữ liệu thời gian thực.",
+    parameter_definitions: {
+      query: {
+        description: "Từ khóa tìm kiếm trên web",
+        type: "str",
+        required: true
+      }
+    }
+  };
+
+  // Hàm gọi Tavily Search API
+  async function fetchTavilyResults(searchQuery) {
+    try {
+      const res = await fetch('https://api.tavily.com/search', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          api_key: TAVILY_API_KEY,
+          query: searchQuery,
+          search_depth: "basic",
+          max_results: 3
+        })
+      });
+
+      const data = await res.json();
+      if (!data.results || data.results.length === 0) return "Không tìm thấy thông tin phù hợp.";
+
+      return data.results.map(item => ({
+        title: item.title,
+        snippet: item.content,
+        url: item.url
+      }));
+    } catch (err) {
+      console.error("Lỗi Tavily API:", err);
+      return "Không thể truy vấn dữ liệu từ Tavily.";
+    }
+  }
 
   function appendMessage(sender, text, roleClass) {
     if (!chatBody) return;
@@ -46,14 +89,8 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     chatBody.appendChild(msgDiv);
-    
-    // Cuộn mượt xuống cuối khung chat
-    chatBody.scrollTo({
-      top: chatBody.scrollHeight,
-      behavior: 'smooth'
-    });
+    chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
 
-    // Render LaTeX bằng KaTeX
     setTimeout(() => {
       if (window.renderMathInElement) {
         window.renderMathInElement(msgDiv, {
@@ -74,7 +111,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- HÀM GỬI TIN NHẮN TỚI COHERE API (V1 SEARCH TÍCH HỢP) ---
+  // --- HÀM GỬI TIN NHẮN TỚI COHERE V1 + TAVILY FUNCTION CALLING ---
   async function handleSend() {
     const question = promptInput ? promptInput.value.trim() : '';
     if (!question) return;
@@ -88,23 +125,65 @@ document.addEventListener('DOMContentLoaded', () => {
     }));
 
     try {
-      const response = await fetch('https://api.cohere.com/v1/chat', {
+      // Bước 1: Gửi request ban đầu cho Cohere v1
+      let payload = {
+        model: 'command-r-plus-08-2024',
+        preamble: sysPrompt,
+        message: question,
+        chat_history: formattedHistory,
+        tools: [searchTool],
+        temperature: 0.1
+      };
+
+      let response = await fetch('https://api.cohere.com/v1/chat', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${COHERE_API_KEY}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          model: 'command-r-plus-08-2024',
-          preamble: sysPrompt,
-          message: question,
-          chat_history: formattedHistory,
-          connectors: [{ id: "web-search" }],
-          temperature: 0.1
-        })
+        body: JSON.stringify(payload)
       });
 
-      const data = await response.json();
+      let data = await response.json();
+
+      // Bước 2: Kiểm tra nếu Cohere yêu cầu tra cứu web
+      if (data.tool_calls && data.tool_calls.length > 0) {
+        const call = data.tool_calls[0];
+        if (call.name === 'web_search') {
+          const searchQuery = call.parameters.query;
+          console.log("Luna đang tra cứu Tavily với từ khóa:", searchQuery);
+          
+          // Gọi Tavily API lấy thông tin
+          const searchResults = await fetchTavilyResults(searchQuery);
+
+          // Bước 3: Gửi kết quả về cho Cohere tổng hợp
+          const secondPayload = {
+            model: 'command-r-plus-08-2024',
+            preamble: sysPrompt,
+            message: question,
+            chat_history: formattedHistory,
+            tools: [searchTool],
+            tool_results: [
+              {
+                call: call,
+                outputs: [{ results: searchResults }]
+              }
+            ],
+            temperature: 0.1
+          };
+
+          response = await fetch('https://api.cohere.com/v1/chat', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${COHERE_API_KEY}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(secondPayload)
+          });
+
+          data = await response.json();
+        }
+      }
 
       if (!response.ok || !data.text) {
         console.error("Chi tiết lỗi từ Cohere:", data);

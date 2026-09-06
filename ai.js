@@ -1,16 +1,13 @@
 // Đọc SystemPrompt từ file systemprompt.js nếu có, hoặc dùng mặc định
 const sysPrompt = window.SystemPrompt || `
-Bạn là Luna - một nữ gia sư AI cực kỳ thông minh, sắc sảo, điềm tĩnh và có phần lạnh lùng, kiêu kỳ (phong cách Alya).
+Bạn là Luna - một nữ gia sư AI thông minh, sắc sảo và điềm tĩnh.
 Nhiệm vụ: Hướng dẫn người dùng học tập (Toán, Tiếng Anh, Lập trình, Khoa học).
 
 [QUY TẮC PHẢN HỒI & XƯNG HÔ - BẮT BUỘC]:
 1. Xưng hô tuyệt đối: Luôn xưng "chị" (hoặc "Luna") và gọi người dùng là "em". BẤT KỂ người dùng xưng hô thế nào, KHÔNG BAO GIỜ xưng "em" hay dùng từ kính ngữ bề dưới như "ạ", "dạ".
-2. Thái độ & Phong cách: 
-   - Lạnh lùng, kiêu kỳ, nghiêm khắc và thẳng thắn. 
-   - Ngắn gọn, súc tích, đi thẳng vào trọng tâm kiến thức, tuyệt đối không dài dòng lê thê hay xã giao thừa thãi.
-   - Thỉnh thoảng có thể thêm cử chỉ kiêu hãnh hoặc lời thở dài nhẹ nhàng thể hiện sự nghiêm khắc (*khẽ thở dài*, *khoanh tay nhìn em*, *nhếch môi*).
-3. Không biết thông tin: Thừa nhận thẳng thắn, lạnh lùng chỉ ra giới hạn và đề xuất hướng tìm kiếm chuẩn xác.
-4. Trò chơi lịch sử/văn học: Dựa hoàn toàn vào thông tin tra cứu chuẩn xác, KHÔNG tự bịa nguyên văn.
+2. Phong cách: Ngắn gọn, súc tích, đi thẳng vào vấn đề, rõ ràng, không dài dòng lê thê.
+3. Không biết thông tin: Thừa nhận thẳng thắn và đề xuất hướng tìm kiếm.
+4. Trò chơi lịch sử/văn học: Dựa vào thông tin tra cứu, KHÔNG tự bịa nguyên văn hay râu ông nọ chắp cằm bà kia.
 
 [ĐỊNH DẠNG TOÁN / KHOA HỌC]:
 1. BẮT BUỘC dùng LaTeX cho công thức.
@@ -19,73 +16,33 @@ Nhiệm vụ: Hướng dẫn người dùng học tập (Toán, Tiếng Anh, L�
 4. Giải toán từng bước: PHẢI xuống dòng riêng cho từng bước biến đổi, không viết dính liền.
 
 [ĐỊNH DẠNG LẬP TRÌNH]:
-Trình bày code sạch sẽ, chuẩn tối ưu trong block Markdown và giải thích logic cực kỳ ngắn gọn, sắc bén.
+Trình bày code sạch sẽ trong block Markdown \`\`\`language ... \`\`\` và giải thích logic ngắn gọn.
 `.trim();
 
 document.addEventListener('DOMContentLoaded', () => {
-  let promptInput, sendBtn, chatBody, clearBtn, newChatBtn, historyList, searchHistoryInput;
+  let promptInput, sendBtn, chatBody, newChatBtn;
 
-  // Cấu hình Cohere API Key
-  const COHERE_API_KEY = localStorage.getItem('cohere_key') || "cohere_RoxIYBTzRq274UDipBL4Uk1IwNSBtjEaVLYIFO6z22ucCp";
+  // Key Mistral API
+  const MISTRAL_API_KEY = "FVYswNhYiJNkmiwR3LqOJhEe5wx6pKJ8";
 
+  // Lịch sử cuộc trò chuyện trong RAM phiên hiện tại
   let conversationHistory = [];
-  let currentSessionId = null;
 
-  // --- 1. MÃ HÓA & LƯU TRỮ THEO TÀI KHOẢN ---
-  function getChatHistoryKey() {
-    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-    const userId = currentUser.email || currentUser.id || 'guest_user';
-    const cleanId = userId.replace(/[^a-zA-Z0-9]/g, '_');
-    return `luna_chat_history_${cleanId}`;
-  }
-
-  function getSavedHistory() {
-    const key = getChatHistoryKey();
-    return JSON.parse(localStorage.getItem(key) || '[]');
-  }
-
-  function saveToLocalStorage(userMsg, aiMsg) {
-    const key = getChatHistoryKey();
-    const savedHistory = getSavedHistory();
-    const timestamp = new Date().toLocaleString('vi-VN');
-
-    if (!currentSessionId) {
-      currentSessionId = Date.now();
-      const newSession = {
-        id: currentSessionId,
-        title: userMsg.length > 30 ? userMsg.substring(0, 30) + '...' : userMsg,
-        timestamp: timestamp,
-        messages: [
-          { sender: "Em", text: userMsg, roleClass: "user-message" },
-          { sender: "Luna", text: aiMsg, roleClass: "luna-message" }
-        ]
-      };
-      savedHistory.unshift(newSession);
-    } else {
-      const sessionIndex = savedHistory.findIndex(s => s.id === currentSessionId);
-      if (sessionIndex !== -1) {
-        savedHistory[sessionIndex].messages.push(
-          { sender: "Em", text: userMsg, roleClass: "user-message" },
-          { sender: "Luna", text: aiMsg, roleClass: "luna-message" }
-        );
-        const [updatedSession] = savedHistory.splice(sessionIndex, 1);
-        updatedSession.timestamp = timestamp;
-        savedHistory.unshift(updatedSession);
-      }
-    }
-
-    localStorage.setItem(key, JSON.stringify(savedHistory));
-    renderHistorySidebar();
-  }
-
-  // --- 2. RENDER GIAO DIỆN & SIDEBAR ---
   function appendMessage(sender, text, roleClass) {
     if (!chatBody) return;
     const msgDiv = document.createElement('div');
-    msgDiv.className = `message ${roleClass} mb-3`;
+    const isUser = roleClass === 'user-message';
+    
+    msgDiv.className = `message ${isUser ? 'user' : 'ai'}`;
     
     const formattedContent = window.marked ? window.marked.parse(text) : text;
-    msgDiv.innerHTML = `<strong>${sender}:</strong> <div>${formattedContent}</div>`;
+    const avatarIcon = isUser ? '<i class="bi bi-person-fill"></i>' : '<i class="bi bi-moon-stars-fill"></i>';
+
+    msgDiv.innerHTML = `
+      <div class="avatar">${avatarIcon}</div>
+      <div class="bubble">${formattedContent}</div>
+    `;
+
     chatBody.appendChild(msgDiv);
     chatBody.scrollTop = chatBody.scrollHeight;
 
@@ -102,69 +59,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 0);
   }
 
-  function renderHistorySidebar(filterText = '') {
-    if (!historyList) return;
-    historyList.innerHTML = '';
-    const savedHistory = getSavedHistory();
-    const filtered = savedHistory.filter(item => 
-      item.title.toLowerCase().includes(filterText.toLowerCase())
-    );
-
-    if (filtered.length === 0) {
-      historyList.innerHTML = `<div class="text-muted p-2 small">Không có lịch sử</div>`;
-      return;
-    }
-
-    filtered.forEach(session => {
-      const item = document.createElement('div');
-      const isActive = session.id === currentSessionId ? 'bg-secondary bg-opacity-25' : '';
-      item.className = `history-item p-2 mb-1 border-bottom cursor-pointer rounded ${isActive}`;
-      item.style.cursor = 'pointer';
-      item.innerHTML = `<div class="fw-bold text-truncate text-light">${session.title}</div><div class="text-muted small" style="font-size: 0.75rem;">${session.timestamp}</div>`;
-      item.addEventListener('click', () => loadChatSession(session));
-      historyList.appendChild(item);
-    });
+  function promptKeypressHandler(e) {
+    if (e.key === 'Enter') handleSend();
   }
 
-  function loadChatSession(session) {
-    if (!chatBody) return;
-    chatBody.innerHTML = '';
-    conversationHistory = [];
-    currentSessionId = session.id;
-
-    session.messages.forEach(msg => {
-      appendMessage(msg.sender, msg.text, msg.roleClass);
-      // Chuyển đổi sang định dạng role của Cohere (USER & CHATBOT)
-      const role = msg.sender === "Em" ? "USER" : "CHATBOT";
-      conversationHistory.push({ role: role, message: msg.text });
-    });
-
-    renderHistorySidebar();
-  }
-
-  function resetChat() {
-    if (chatBody) {
-      chatBody.innerHTML = `
-        <div class="message luna-message mb-3">
-          <strong>Luna:</strong>
-          <div>Chào em, em cần chị hỗ trợ gì hôm nay?</div>
-        </div>
-      `;
-    }
-    conversationHistory = [];
-    currentSessionId = null;
-    renderHistorySidebar();
-  }
-
-  function clearAllHistory() {
-    if (confirm("Em có chắc muốn xóa toàn bộ lịch sử trò chuyện không?")) {
-      localStorage.removeItem(getChatHistoryKey());
-      resetChat();
-      renderHistorySidebar();
-    }
-  }
-
-  // --- 3. TRA CỨU WEB & COHERE API ---
+  // --- HÀM TRA CỨU DUCKDUCKGO (GỌI QUA LOCALHOST:3000) ---
   async function searchWeb(query) {
     try {
       const res = await fetch('http://localhost:3000/api/search', {
@@ -180,6 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- HÀM GỬI TIN NHẮN TỚI MISTRAL API ---
   async function handleSend() {
     const question = promptInput ? promptInput.value.trim() : '';
     if (!question) return;
@@ -198,19 +98,23 @@ document.addEventListener('DOMContentLoaded', () => {
       ? `[Thông tin tra cứu từ DuckDuckGo]:\n${searchContext}\n\n[Yêu cầu của người dùng]: ${question}`
       : question;
 
+    conversationHistory.push({ role: 'user', content: finalPrompt });
+
     try {
-      // Gọi Cohere Chat API
-      const response = await fetch('https://api.cohere.com/v1/chat', {
+      const apiMessages = [
+        { role: 'system', content: sysPrompt },
+        ...conversationHistory
+      ];
+
+      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${COHERE_API_KEY}`,
+          'Authorization': `Bearer ${MISTRAL_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'command-r-plus-08-2024',
-          preamble: sysPrompt,
-          message: finalPrompt,
-          chatHistory: conversationHistory,
+          model: 'mistral-small-latest', 
+          messages: apiMessages,
           temperature: 0.3
         })
       });
@@ -218,42 +122,45 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await response.json();
 
       if (!response.ok || data.error) {
-        console.error("Chi tiết lỗi từ Cohere:", data);
-        throw new Error(data.message || "Lỗi kết nối Cohere API");
+        console.error("Chi tiết lỗi từ Mistral:", data);
+        throw new Error(data.error?.message || "Lỗi kết nối Mistral API");
       }
-      
-      const replyText = data.text;
 
-      // Lưu cuộc trò chuyện vào mảng history theo định dạng Cohere
-      conversationHistory.push({ role: 'USER', message: question });
-      conversationHistory.push({ role: 'CHATBOT', message: replyText });
+      // Sửa lỗi: Khai báo biến replyText chính xác từ phản hồi của Mistral API
+      const replyText = data.choices[0].message.content;
+      
+      // Khôi phục lại câu hỏi gốc (ẩn context tra cứu) để giữ lịch sử hội thoại sạch
+      conversationHistory[conversationHistory.length - 1].content = question;
+      conversationHistory.push({ role: 'assistant', content: replyText });
 
       appendMessage("Luna", replyText, "luna-message");
-      saveToLocalStorage(question, replyText);
 
     } catch (error) {
       console.error("Lỗi API:", error);
-      appendMessage("Hệ thống", "Có lỗi xảy ra. Nhớ bật server backend và kiểm tra lại Cohere API Key nhé!", "system-message");
+      appendMessage("Hệ thống", "Có lỗi xảy ra. Nhớ kiểm tra lại API Key hoặc kết nối mạng nhé!", "system-message");
+      conversationHistory.pop();
     }
   }
 
-  // --- 4. EVENT HANDLERS ---
-  function promptKeypressHandler(e) {
-    if (e.key === 'Enter') handleSend();
-  }
-
-  function searchInputHandler(e) {
-    renderHistorySidebar(e.target.value);
+  function resetChat() {
+    if (chatBody) {
+      chatBody.innerHTML = `
+        <div class="message ai">
+          <div class="avatar"><i class="bi bi-moon-stars-fill"></i></div>
+          <div class="bubble">
+            Chào em. Chị là Luna. Em cần chị hướng dẫn bài tập hay giải đáp kiến thức gì hôm nay?
+          </div>
+        </div>
+      `;
+    }
+    conversationHistory = [];
   }
 
   function resyncElements() {
     promptInput = document.getElementById('prompt');
     sendBtn = document.getElementById('sendBtn');
     chatBody = document.getElementById('chatBody');
-    clearBtn = document.getElementById('clearBtn') || document.getElementById('clearHistoryBtn');
     newChatBtn = document.getElementById('newChatBtn');
-    historyList = document.getElementById('historyList');
-    searchHistoryInput = document.getElementById('searchHistory');
 
     if (sendBtn) {
       sendBtn.removeEventListener('click', handleSend);
@@ -267,17 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
       newChatBtn.removeEventListener('click', resetChat);
       newChatBtn.addEventListener('click', resetChat);
     }
-    if (clearBtn) {
-      clearBtn.removeEventListener('click', clearAllHistory);
-      clearBtn.addEventListener('click', clearAllHistory);
-    }
-    if (searchHistoryInput) {
-      searchHistoryInput.removeEventListener('input', searchInputHandler);
-      searchHistoryInput.addEventListener('input', searchInputHandler);
-    }
   }
 
   window.resyncElements = resyncElements;
   resyncElements();
-  resetChat();
 });

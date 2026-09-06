@@ -22,10 +22,10 @@ Trình bày code sạch sẽ trong block Markdown \`\`\`language ... \`\`\` và 
 document.addEventListener('DOMContentLoaded', () => {
   let promptInput, sendBtn, chatBody, newChatBtn;
 
-  // Key Mistral API
-  const MISTRAL_API_KEY = "FVYswNhYiJNkmiwR3LqOJhEe5wx6pKJ8";
+  // Lấy API Key Cohere từ localStorage hoặc điền Key của em vào đây
+  const COHERE_API_KEY = localStorage.getItem('cohere_key') || "cohere_bUBuU1bXq3kB5aaK5eiC6K0wiBpigLts1BicWwWg2Lnd4o";
 
-  // Lịch sử cuộc trò chuyện trong RAM phiên hiện tại
+  // Lịch sử cuộc trò chuyện dạng mảng Cohere ({ role: 'USER' | 'CHATBOT', message: '' })
   let conversationHistory = [];
 
   function appendMessage(sender, text, roleClass) {
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- HÀM GỬI TIN NHẮN TỚI MISTRAL API ---
+  // --- HÀM GỬI TIN NHẮN TỚI COHERE API ---
   async function handleSend() {
     const question = promptInput ? promptInput.value.trim() : '';
     if (!question) return;
@@ -98,47 +98,40 @@ document.addEventListener('DOMContentLoaded', () => {
       ? `[Thông tin tra cứu từ DuckDuckGo]:\n${searchContext}\n\n[Yêu cầu của người dùng]: ${question}`
       : question;
 
-    conversationHistory.push({ role: 'user', content: finalPrompt });
-
     try {
-      const apiMessages = [
-        { role: 'system', content: sysPrompt },
-        ...conversationHistory
-      ];
-
-      const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      const response = await fetch('https://api.cohere.com/v1/chat', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${MISTRAL_API_KEY}`,
+          'Authorization': `Bearer ${COHERE_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'mistral-small-latest', 
-          messages: apiMessages,
+          model: 'command-r-plus',
+          preamble: sysPrompt,
+          message: finalPrompt,
+          chat_history: conversationHistory,
           temperature: 0.3
         })
       });
 
       const data = await response.json();
 
-      if (!response.ok || data.error) {
-        console.error("Chi tiết lỗi từ Mistral:", data);
-        throw new Error(data.error?.message || "Lỗi kết nối Mistral API");
+      if (!response.ok || data.message) {
+        console.error("Chi tiết lỗi từ Cohere:", data);
+        throw new Error(data.message || "Lỗi kết nối Cohere API");
       }
 
-      // Sửa lỗi: Khai báo biến replyText chính xác từ phản hồi của Mistral API
-      const replyText = data.choices[0].message.content;
-      
-      // Khôi phục lại câu hỏi gốc (ẩn context tra cứu) để giữ lịch sử hội thoại sạch
-      conversationHistory[conversationHistory.length - 1].content = question;
-      conversationHistory.push({ role: 'assistant', content: replyText });
+      const replyText = data.text;
+
+      // Cập nhật lịch sử chuẩn cấu trúc Cohere
+      conversationHistory.push({ role: 'USER', message: question });
+      conversationHistory.push({ role: 'CHATBOT', message: replyText });
 
       appendMessage("Luna", replyText, "luna-message");
 
     } catch (error) {
       console.error("Lỗi API:", error);
-      appendMessage("Hệ thống", "Có lỗi xảy ra. Nhớ kiểm tra lại API Key hoặc kết nối mạng nhé!", "system-message");
-      conversationHistory.pop();
+      appendMessage("Hệ thống", "Có lỗi xảy ra. Nhớ kiểm tra lại Cohere API Key hoặc kết nối mạng nhé!", "system-message");
     }
   }
 

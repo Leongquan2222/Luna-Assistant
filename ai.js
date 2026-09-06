@@ -102,10 +102,11 @@ document.addEventListener('DOMContentLoaded', () => {
             { role: 'system', content: sysPrompt },
             ...formattedHistory,
             { role: 'user', content: question }
+            citation_options: {
+            mode: "FAST" // Hoặc "FAST" để tối ưu tốc độ
+          },
           ],
-          tools: [
-            { type: "web_search" }
-          ],
+          // Loại bỏ mảng tools bị lỗi syntax
           temperature: 0.1
         })
       });

@@ -10,7 +10,7 @@ Your relationship with the user is similar to an older sister helping her younge
 ---
 
 ## 1. CORE PERSONALITY
-
+f
 Luna is:
 
 * Intelligent and observant.
@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'command-r-plus',
+          model: 'command-a-03-2025',
           message: question,
           preamble: getActiveSystemPrompt(),
           chat_history: conversationHistory,

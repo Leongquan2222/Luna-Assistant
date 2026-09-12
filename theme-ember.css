@@ -4,57 +4,57 @@
        Background
     ========================= */
 
-    --bg: #041f1e;
+    --bg: #0e2a07;          /* Xanh lá rất tối cho nền chính */
 
-    --surface: #0a2d2c;
+    --surface: #1a4f0d;     /* Nền bề mặt khối */
 
-    --card: #113a38;
+    --card: #2a7c13;        /* Màu card chính (#2A7C13) */
 
     /* =========================
        Main Colors
     ========================= */
 
-    --primary: #0d9488;
+    --primary: #2a7c13;     /* Dark Green gốc */
 
-    --secondary: #115e59;
+    --secondary: #76c457;   /* Leaf Green gốc */
 
-    --accent: #2dd4bf;
+    --accent: #fbe6c2;      /* Warm Gold điểm nhấn */
 
     /* =========================
        Text
     ========================= */
 
-    --text: #f0fdfa;
+    --text: #fff8cf;        /* Cream Yellow chính cho chữ (#FFF8CF) */
 
-    --text-secondary: #99f6e4;
+    --text-secondary: #fbe6c2;/* Soft Cream phụ cho chữ (#FBE6C2) */
 
     /* =========================
        Glass
     ========================= */
 
-    --glass: rgba(10, 45, 44, .60);
+    --glass: rgba(42, 124, 19, .50);
 
-    --glass-border: rgba(45, 212, 191, .15);
+    --glass-border: rgba(118, 196, 87, .25);
 
     /* =========================
        Gradient
     ========================= */
 
-    --gradient1: #041f1e;
+    --gradient1: #0e2a07;
 
-    --gradient2: #0a2d2c;
+    --gradient2: #1a4f0d;
 
-    --gradient3: #115e59;
+    --gradient3: #2a7c13;
 
-    --gradient4: #0d9488;
+    --gradient4: #76c457;
 
     /* =========================
        Blob
     ========================= */
 
-    --blob1: #0f766e;
+    --blob1: #2a7c13;
 
-    --blob2: #2dd4bf;
+    --blob2: #76c457;
 
     /* =========================
        Shadow

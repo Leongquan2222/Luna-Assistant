@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'llama-3.1-8b-instant',
+          model: 'meta-llama/llama-prompt-guard-2-22m',
           messages: messages,
           tools: toolsDefinition,
           tool_choice: 'auto'

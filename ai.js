@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'meta-llama/llama-3.3-70b-instruct', // Model mạnh mẽ hỗ trợ Tool Call chuẩn
+          model: 'nex-agi/nex-n2.5-pro:free', // Model mạnh mẽ hỗ trợ Tool Call chuẩn
           messages: messages,
           tools: toolsDefinition,
           tool_choice: 'auto'

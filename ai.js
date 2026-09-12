@@ -620,38 +620,56 @@ document.addEventListener('DOMContentLoaded', () => {
       const assistantMessage = res1.message;
       let finalAnswer = "";
 
-      // Kiểm tra nếu AI yêu cầu gọi Tool
-      if (assistantMessage && assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-        const toolCall = assistantMessage.tool_calls[0];
-        
-        // Chạy Tool Tavily
-        const searchResults = await executeTavilySearch(toolCall.function.arguments);
+      // Nếu AI muốn gọi Tool
+if (assistantMessage && assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+  const toolCall = assistantMessage.tool_calls[0];
+  
+  // Chạy Tool Tavily
+  const searchResults = await executeTavilySearch(toolCall.function.arguments);
 
-        // Đưa theo đúng thứ tự chuẩn Cohere v2: User -> Assistant (chứa tool_call) -> Tool
-        messages.push(assistantMessage);
-        messages.push({
-          role: 'tool',
-          tool_call_id: toolCall.id,
-          content: JSON.stringify(searchResults)
-        });
+  // 1. Thêm câu trả lời của Assistant (chứa tool_calls) vào history
+  messages.push(assistantMessage);
 
-        // Lượt 2: Nhận phản hồi cuối cùng
-        const res2 = await fetch('https://api.cohere.com/v2/chat', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${COHERE_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: 'command-r-plus',
-            messages: messages
-          })
-        }).then(r => r.json());
-
-        finalAnswer = res2.message?.content?.[0]?.text || "Chị không thể xử lý phản hồi lúc này.";
-      } else {
-        finalAnswer = assistantMessage?.content?.[0]?.text || "Chị chưa nhận được câu trả lời.";
+  // 2. Thêm kêt quả Tool theo ĐÚNG FORMAT COHERE V2
+  messages.push({
+    role: 'tool',
+    tool_call_id: toolCall.id,
+    content: [
+      {
+        type: 'text',
+        text: typeof searchResults === 'string' ? searchResults : JSON.stringify(searchResults)
       }
+    ]
+  });
+
+  // 3. Gửi Lượt 2 để lấy kết quả cuối
+  const res2 = await fetch('https://api.cohere.com/v2/chat', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${COHERE_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'command-r-plus',
+      messages: messages,
+      tools: [searchTool] // Giữ lại mảng tools để không lệch context
+    })
+  }).then(r => r.json());
+
+  const rawContent = res2.message?.content || [];
+  finalAnswer = rawContent
+    .filter(c => c.type === 'text')
+    .map(c => c.text)
+    .join('\n') || "Chị không thể xử lý phản hồi lúc này.";
+
+} else {
+  // Lượt 1 (Không gọi tool)
+  const rawContent = assistantMessage?.content || [];
+  finalAnswer = rawContent
+    .filter(c => c.type === 'text')
+    .map(c => c.text)
+    .join('\n') || "Chị chưa nhận được câu trả lời.";
+}
 
       // Cập nhật lịch sử & hiển thị câu trả lời lên UI
       conversationHistory.push({ role: 'USER', message: question });

@@ -1,39 +1,33 @@
 document.addEventListener('DOMContentLoaded', () => {
   let promptInput, sendBtn, chatBody, newChatBtn;
 
-  const COHERE_API_KEY = localStorage.getItem('cohere_key') || "cohere_s89ar0vnVqqWHiVEAHzpkyBvotdvkgLb44sfPPzF3n5cWK";
+  // Lấy API key từ localStorage hoặc dùng key mặc định
+  const GROQ_API_KEY = localStorage.getItem('groq_key') || "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";
   const TAVILY_API_KEY = localStorage.getItem('tavily_key') || "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";
 
   let conversationHistory = [];
   let pastedImage = null;
-  let isRequesting = false;
+  let isRequesting = false; // Cờ chặn request trùng lặp (Rate Limit 429)
 
   function getActiveSystemPrompt() {
-    return typeof sysPrompt !== 'undefined' ? sysPrompt : '';
+    return typeof sysPrompt !== 'undefined' ? sysPrompt : 'Bạn là Luna, một trợ lý AI thông minh.';
   }
 
-  // Tối ưu Query trước khi tìm kiếm
+  // Tối ưu từ khóa tìm kiếm
   function prepareSearchQuery(userMessage) {
     if (!userMessage) return '';
     const quotedText = userMessage.match(/"([^"]+)"/);
-    
     if (quotedText && quotedText[1]) {
       return `lời bài hát "${quotedText[1]}"`;
     }
-    
-    const cleanMessage = userMessage
-      .replace(/(là lời bài hát nào|của ca sĩ|của|là bài gì)/gi, '')
-      .trim();
-      
-    return cleanMessage;
+    return userMessage.replace(/(là lời bài hát nào|của ca sĩ|của|là bài gì)/gi, '').trim();
   }
 
+  // Thực thi tìm kiếm Tavily
   async function executeTavilySearch(args) {
     try {
       const searchArgs = typeof args === 'string' ? JSON.parse(args) : args;
-      let rawQuery = searchArgs.query || searchArgs;
-
-      // Xử lý làm sạch query
+      const rawQuery = searchArgs.query || searchArgs;
       const cleanQuery = prepareSearchQuery(rawQuery);
 
       const res = await fetch('https://api.tavily.com/search', {
@@ -69,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const isUser = roleClass === 'user-message';
 
     msgDiv.className = `message ${isUser ? 'user' : 'ai'}`;
-
     const formattedContent = window.marked ? window.marked.parse(text) : text;
     const avatarIcon = isUser ? '<i class="bi bi-person-fill"></i>' : '<i class="bi bi-moon-stars-fill"></i>';
 
@@ -119,168 +112,134 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function handleSend() {
-    if (!promptInput) return;
+    if (isRequesting || !promptInput) return;
 
     const question = promptInput.value.trim();
     if (!question && !pastedImage) return;
-    
-    if (question) {
-      appendMessage('Em', question, 'user-message');
-    }
 
+    // Khóa trạng thái gửi
+    isRequesting = true;
+    if (sendBtn) sendBtn.disabled = true;
+
+    if (question) appendMessage('Em', question, 'user-message');
     if (pastedImage) {
       appendMessage('Em', '🖼️ [Đã gửi ảnh]', 'user-message');
       pastedImage = null;
     }
-    if (isRequesting) return;
-
-  if (!promptInput) return;
-
-  const question = promptInput.value.trim();
-  if (!question && !pastedImage) return;
-
-  // 3. Đặt cờ khóa và disable nút gửi
-  isRequesting = true;
-  if (sendBtn) sendBtn.disabled = true;
-
-  if (question) {
-    appendMessage('Em', question, 'user-message');
-  }
-
-  if (pastedImage) {
-    appendMessage('Em', '🖼️ [Đã gửi ảnh]', 'user-message');
-    pastedImage = null;
-  }
-
-  promptInput.value = '';
-  let finalAnswer = '';
-
-  try {
-    // ... Giữ nguyên toàn bộ logic fetch Cohere hiện tại của bạn ...
-
-  } catch (err) {
-    console.error('Lỗi kết nối Cohere:', err);
-    appendMessage('Luna', 'Có vẻ kết nối tới hệ thống của chị gặp vấn đề rồi.', 'ai-message');
-  } finally {
-    // 4. BẮT BUỘC: Mở lại khóa dù request thành công hay thất bại
-    isRequesting = false;
-    if (sendBtn) sendBtn.disabled = false;
-  }
-}
 
     promptInput.value = '';
-    let finalAnswer = '';
+
+    // Khởi tạo danh sách messages chuẩn OpenAI Format cho Groq
+    const messages = [
+      { role: 'system', content: getActiveSystemPrompt() },
+      ...conversationHistory,
+      { role: 'user', content: question }
+    ];
+
+    const toolsDefinition = [
+      {
+        type: 'function',
+        function: {
+          name: 'web_search',
+          description: 'Tìm kiếm thông tin thực tế trên Internet khi cần dữ liệu mới, tra cứu lời bài hát hoặc kiểm chứng thông tin.',
+          parameters: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'Từ khóa tìm kiếm trên web'
+              }
+            },
+            required: ['query']
+          }
+        }
+      }
+    ];
 
     try {
-      const res1 = await fetch('https://api.cohere.com/v1/chat', {
+      // ============================================================
+      // LƯỢT 1: Gửi yêu cầu tới Groq API
+      // ============================================================
+      const res1 = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${COHERE_API_KEY}`,
+          'Authorization': `Bearer ${GROQ_API_KEY}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'command-a-03-2025',
-          message: question,
-          preamble: getActiveSystemPrompt(),
-          chat_history: conversationHistory,
-          tools: [
-            {
-              name: 'web_search',
-              description: 'Tìm kiếm thông tin thực tế trên Internet khi người dùng hỏi về tin tức, dữ liệu mới hoặc lời bài hát.',
-              parameter_definitions: {
-                query: {
-                  description: 'Từ khóa tìm kiếm trên web',
-                  type: 'str',
-                  required: true
-                }
-              }
-            }
-          ]
+          model: 'whisper-large-v3-turbo',
+          messages: messages,
+          tools: toolsDefinition,
+          tool_choice: 'auto'
         })
       });
 
       const res1Data = await res1.json();
+      if (!res1.ok) throw new Error(res1Data?.error?.message || `Groq API HTTP ${res1.status}`);
 
-      if (!res1.ok) {
-        throw new Error(res1Data?.message || res1Data?.error || `Cohere API HTTP ${res1.status}`);
-      }
+      const responseMessage = res1Data.choices[0].message;
 
-      if (Array.isArray(res1Data.tool_calls) && res1Data.tool_calls.length > 0) {
-        const toolResults = [];
+      // ============================================================
+      // KIỂM TRA LỆNH GỌI TOOL CALL
+      // ============================================================
+      if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
+        messages.push(responseMessage); // Lưu lại tin nhắn assistant gọi tool
 
-        for (const toolCall of res1Data.tool_calls) {
-          if (toolCall.name !== 'web_search') continue;
+        for (const toolCall of responseMessage.tool_calls) {
+          if (toolCall.function.name === 'web_search') {
+            const searchResults = await executeTavilySearch(toolCall.function.arguments);
 
-          const searchResults = await executeTavilySearch(toolCall.parameters);
-
-          toolResults.push({
-            call: {
+            messages.push({
+              tool_call_id: toolCall.id,
+              role: 'tool',
               name: 'web_search',
-              parameters: toolCall.parameters
-            },
-            outputs: [
-              {
-                result: typeof searchResults === 'string' ? searchResults : JSON.stringify(searchResults)
-              }
-            ]
-          });
+              content: typeof searchResults === 'string' ? searchResults : JSON.stringify(searchResults)
+            });
+          }
         }
 
-        const res2 = await fetch('https://api.cohere.com/v1/chat', {
+        // ============================================================
+        // LƯỢT 2: Gửi kết quả Tool về Groq để tổng hợp câu trả lời
+        // ============================================================
+        const res2 = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${COHERE_API_KEY}`,
+            'Authorization': `Bearer ${GROQ_API_KEY}`,
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: 'command-a-03-2025',
-            message: '',
-            preamble: getActiveSystemPrompt(),
-            chat_history: [
-              ...conversationHistory,
-              { role: 'USER', message: question },
-              { role: 'CHATBOT', message: res1Data.text || '' }
-            ],
-            tool_results: toolResults,
-            tools: [
-              {
-                name: 'web_search',
-                description: 'Tìm kiếm thông tin thực tế trên Internet.',
-                parameter_definitions: {
-                  query: {
-                    description: 'Từ khóa tìm kiếm trên web',
-                    type: 'str',
-                    required: true
-                  }
-                }
-              }
-            ]
+            model: 'llama-3.3-70b-versatile',
+            messages: messages
           })
         });
 
         const res2Data = await res2.json();
+        if (!res2.ok) throw new Error(res2Data?.error?.message || `Groq API HTTP ${res2.status}`);
 
-        if (!res2.ok) {
-          throw new Error(res2Data?.message || res2Data?.error || `Cohere API HTTP ${res2.status}`);
-        }
+        const finalAnswer = res2Data.choices[0].message.content.trim();
 
-        finalAnswer = typeof res2Data.text === 'string' ? res2Data.text.trim() : '';
+        // Cập nhật lịch sử chat
+        conversationHistory.push({ role: 'user', content: question });
+        conversationHistory.push({ role: 'assistant', content: finalAnswer });
+
+        appendMessage('Luna', finalAnswer, 'ai-message');
       } else {
-        finalAnswer = typeof res1Data.text === 'string' ? res1Data.text.trim() : '';
+        // KHÔNG DÙNG TOOL
+        const finalAnswer = responseMessage.content.trim();
+
+        conversationHistory.push({ role: 'user', content: question });
+        conversationHistory.push({ role: 'assistant', content: finalAnswer });
+
+        appendMessage('Luna', finalAnswer, 'ai-message');
       }
-
-      if (!finalAnswer) {
-        finalAnswer = 'Ừ, chị đây. Có vẻ phản hồi vừa rồi không về đúng định dạng. Em nói lại chị nghe.';
-      }
-
-      conversationHistory.push({ role: 'USER', message: question });
-      conversationHistory.push({ role: 'CHATBOT', message: finalAnswer });
-
-      appendMessage('Luna', finalAnswer, 'ai-message');
 
     } catch (err) {
-      console.error('Lỗi kết nối Cohere:', err);
-      appendMessage('Luna', 'Có vẻ kết nối tới hệ thống của chị gặp vấn đề rồi. Kiểm tra API key hoặc Console giúp chị.', 'ai-message');
+      console.error('Lỗi Groq API:', err);
+      appendMessage('Luna', 'Có vẻ kết nối tới Groq API gặp sự cố. Bạn kiểm tra lại API Key nhé.', 'ai-message');
+    } finally {
+      // Mở khóa gửi request
+      isRequesting = false;
+      if (sendBtn) sendBtn.disabled = false;
     }
   }
 
@@ -290,7 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="message ai">
           <div class="avatar"><i class="bi bi-moon-stars-fill"></i></div>
           <div class="bubble">
-            Chào em. Chị là Luna. Em cần chị hướng dẫn bài tập hay giải đáp kiến thức gì hôm nay?
+            Chào bạn. Tôi là Luna. Tôi có thể hỗ trợ gì cho bạn hôm nay?
           </div>
         </div>
       `;

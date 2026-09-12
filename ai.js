@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let conversationHistory = [];
   let pastedImage = null;
+  let isRequesting = false;
 
   function getActiveSystemPrompt() {
     return typeof sysPrompt !== 'undefined' ? sysPrompt : '';
@@ -122,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const question = promptInput.value.trim();
     if (!question && !pastedImage) return;
-
+    
     if (question) {
       appendMessage('Em', question, 'user-message');
     }
@@ -131,6 +132,41 @@ document.addEventListener('DOMContentLoaded', () => {
       appendMessage('Em', '🖼️ [Đã gửi ảnh]', 'user-message');
       pastedImage = null;
     }
+    if (isRequesting) return;
+
+  if (!promptInput) return;
+
+  const question = promptInput.value.trim();
+  if (!question && !pastedImage) return;
+
+  // 3. Đặt cờ khóa và disable nút gửi
+  isRequesting = true;
+  if (sendBtn) sendBtn.disabled = true;
+
+  if (question) {
+    appendMessage('Em', question, 'user-message');
+  }
+
+  if (pastedImage) {
+    appendMessage('Em', '🖼️ [Đã gửi ảnh]', 'user-message');
+    pastedImage = null;
+  }
+
+  promptInput.value = '';
+  let finalAnswer = '';
+
+  try {
+    // ... Giữ nguyên toàn bộ logic fetch Cohere hiện tại của bạn ...
+
+  } catch (err) {
+    console.error('Lỗi kết nối Cohere:', err);
+    appendMessage('Luna', 'Có vẻ kết nối tới hệ thống của chị gặp vấn đề rồi.', 'ai-message');
+  } finally {
+    // 4. BẮT BUỘC: Mở lại khóa dù request thành công hay thất bại
+    isRequesting = false;
+    if (sendBtn) sendBtn.disabled = false;
+  }
+}
 
     promptInput.value = '';
     let finalAnswer = '';

@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'groq/compound-mini',
+          model: 'llama-3.1-8b-instant',
           messages: messages,
           tools: toolsDefinition,
           tool_choice: 'auto'

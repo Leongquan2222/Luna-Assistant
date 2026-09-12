@@ -487,6 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const TAVILY_API_KEY = "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";
 
   let conversationHistory = [];
+  let pastedImage = null;
 
   const searchTool = {
     type: "function",
@@ -516,6 +517,23 @@ document.addEventListener('DOMContentLoaded', () => {
       content: item.message
     }));
   }
+  promptInput.addEventListener("paste", (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of items) {
+        if (item.type.startsWith("image/")) {
+            const file = item.getAsFile();
+
+            if (file) {
+                console.log("Đã nhận ảnh:", file);
+            }
+
+            e.preventDefault();
+            break;
+        }
+    }
+});
 
   async function executeTavilySearch(args) {
     try {
@@ -587,17 +605,23 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!promptInput) return;
 
   const question = promptInput.value.trim();
-  if (!question) return;
 
-  // Hiển thị tin nhắn người dùng
+if (!question && !pastedImage) return;
+
+// Hiển thị tin nhắn người dùng
+if (question) {
   appendMessage('Em', question, 'user-message');
-  promptInput.value = '';
+}
 
-  // Lịch sử chat của Cohere V1
-  const chatHistory = conversationHistory.map(item => ({
-    role: item.role,
-    message: item.message
-  }));
+if (pastedImage) {
+  appendMessage(
+    'Em',
+    '🖼️ Đã gửi một hình ảnh.',
+    'user-message'
+  );
+}
+
+promptInput.value = '';
 
   try {
     // ============================================================

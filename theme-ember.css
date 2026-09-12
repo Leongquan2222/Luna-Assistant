@@ -4,57 +4,57 @@
        Background
     ========================= */
 
-    --bg: #0e2a07;          /* Xanh lá rất tối cho nền chính */
+    --bg: #141c28;          /* Xanh Navy rất tối (từ #1B5E20 & #324E7B) */
 
-    --surface: #1a4f0d;     /* Nền bề mặt khối */
+    --surface: #1e2d42;     /* Nền bề mặt khối */
 
-    --card: #2a7c13;        /* Màu card chính (#2A7C13) */
+    --card: #324e7b;        /* Màu card chính (#324E7B) */
 
     /* =========================
        Main Colors
     ========================= */
 
-    --primary: #2a7c13;     /* Dark Green gốc */
+    --primary: #1b5e20;     /* Deep Green (#1B5E20) */
 
-    --secondary: #76c457;   /* Leaf Green gốc */
+    --secondary: #5068a9;   /* Slate Blue (#5068A9) */
 
-    --accent: #fbe6c2;      /* Warm Gold điểm nhấn */
+    --accent: #66bb6a;      /* Leaf Green rực rỡ (#66BB6A) */
 
     /* =========================
        Text
     ========================= */
 
-    --text: #fff8cf;        /* Cream Yellow chính cho chữ (#FFF8CF) */
+    --text: #f8f8f8;        /* Trắng sáng (#F8F8F8) */
 
-    --text-secondary: #fbe6c2;/* Soft Cream phụ cho chữ (#FBE6C2) */
+    --text-secondary: #a5d6a7;/* Mint Green dịu mắt (#A5D6A7) */
 
     /* =========================
        Glass
     ========================= */
 
-    --glass: rgba(42, 124, 19, .50);
+    --glass: rgba(50, 78, 123, .45);
 
-    --glass-border: rgba(118, 196, 87, .25);
+    --glass-border: rgba(102, 187, 106, .25);
 
     /* =========================
        Gradient
     ========================= */
 
-    --gradient1: #0e2a07;
+    --gradient1: #141c28;
 
-    --gradient2: #1a4f0d;
+    --gradient2: #1b5e20;
 
-    --gradient3: #2a7c13;
+    --gradient3: #324e7b;
 
-    --gradient4: #76c457;
+    --gradient4: #5068a9;
 
     /* =========================
        Blob
     ========================= */
 
-    --blob1: #2a7c13;
+    --blob1: #66bb6a;       /* Xanh lá tươi */
 
-    --blob2: #76c457;
+    --blob2: #86a6df;       /* Xanh dương nhạt (#86A6DF) */
 
     /* =========================
        Shadow

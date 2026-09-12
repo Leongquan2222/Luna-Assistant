@@ -611,7 +611,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'command-r-plus',
+        model: 'command-a-03-2025',
         message: question,
 
         // Prompt của Luna

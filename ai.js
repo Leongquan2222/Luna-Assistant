@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   let promptInput, sendBtn, chatBody, newChatBtn;
 
-  const COHERE_API_KEY = localStorage.getItem('cohere_key') || "bUBuU1bXq3kB5aaK5eiC6K0wiBpigLts1BicWwWg";
+  const COHERE_API_KEY = localStorage.getItem('cohere_key') || "cohere_s89ar0vnVqqWHiVEAHzpkyBvotdvkgLb44sfPPzF3n5cWK";
   const TAVILY_API_KEY = localStorage.getItem('tavily_key') || "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";
 
   let conversationHistory = [];

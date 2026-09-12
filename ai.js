@@ -488,6 +488,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let conversationHistory = [];
   let pastedImage = null;
+  let promptInput='';
 
   const searchTool = {
     type: "function",

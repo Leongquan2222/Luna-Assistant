@@ -494,36 +494,42 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function executeTavilySearch(args) {
-    try {
-      const searchArgs = typeof args === 'string' ? JSON.parse(args) : args;
-      const query = searchArgs.query || searchArgs;
+  try {
+    const searchArgs = typeof args === 'string' ? JSON.parse(args) : args;
+    let rawQuery = searchArgs.query || searchArgs;
 
-      const res = await fetch('https://api.tavily.com/search', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          api_key: TAVILY_API_KEY,
-          query: query,
-          search_depth: "basic",
-          max_results: 3
-        })
-      });
-
-      const data = await res.json();
-      if (!data.results || data.results.length === 0) {
-        return "Không tìm thấy thông tin phù hợp.";
-      }
-
-      return data.results.map(item => ({
-        title: item.title,
-        snippet: item.content,
-        url: item.url
-      }));
-    } catch (err) {
-      console.error("Lỗi Tavily API:", err);
-      return "Không thể truy vấn dữ liệu từ Tavily.";
+    // Tối ưu query: Rút gọn nếu quá dài và tự động thêm ngữ cảnh âm nhạc
+    if (rawQuery.length > 50) {
+      rawQuery = rawQuery.substring(0, 50); // Cắt bớt câu quá dài
     }
+    const cleanQuery = `lời bài hát "${rawQuery}"`;
+
+    const res = await fetch('https://api.tavily.com/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        api_key: TAVILY_API_KEY,
+        query: cleanQuery,
+        search_depth: "advanced", // Chuyển từ "basic" sang "advanced" để tìm sâu hơn
+        max_results: 3
+      })
+    });
+
+    const data = await res.json();
+    if (!data.results || data.results.length === 0) {
+      return "Không tìm thấy thông tin phù hợp.";
+    }
+
+    return data.results.map(item => ({
+      title: item.title,
+      snippet: item.content,
+      url: item.url
+    }));
+  } catch (err) {
+    console.error("Lỗi Tavily API:", err);
+    return "Không thể truy vấn dữ liệu từ Tavily.";
   }
+}
 
   function appendMessage(sender, text, roleClass) {
     if (!chatBody) return;

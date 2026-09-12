@@ -484,36 +484,51 @@ Her signature style can be summarized as:
 document.addEventListener('DOMContentLoaded', () => {
   let promptInput, sendBtn, chatBody, newChatBtn;
 
-  // Key Cohere & Tavily API Config
   const COHERE_API_KEY = localStorage.getItem('cohere_key') || "bUBuU1bXq3kB5aaK5eiC6K0wiBpigLts1BicWwWg";
   const TAVILY_API_KEY = "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";
 
   let conversationHistory = [];
 
-  // Khai báo cấu trúc Tool cho Cohere API v1
+  // 1. Cấu trúc Tool theo chuẩn Cohere v2 (JSON Schema)
   const searchTool = {
-    name: "web_search",
-    description: "Tìm kiếm thông tin thực tế khi người dùng hỏi tin tức, văn bản pháp luật, dữ liệu thời gian thực.",
-    parameter_definitions: {
-      query: {
-        description: "Từ khóa tìm kiếm trên web",
-        type: "str",
-        required: true
+    type: "function",
+    function: {
+      name: "web_search",
+      description: "Tìm kiếm thông tin thực tế khi người dùng hỏi tin tức, văn bản pháp luật, dữ liệu thời gian thực.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "Từ khóa tìm kiếm trên web"
+          }
+        },
+        required: ["query"]
       }
     }
   };
 
-  // Hàm gọi Tavily Search API
-  async function fetchTavilyResults(searchQuery) {
+  function getActiveSystemPrompt() {
+    return sysPrompt;
+  }
+
+  function getFormattedHistory() {
+    return conversationHistory.map(item => ({
+      role: item.role === 'USER' ? 'user' : 'assistant',
+      content: item.message
+    }));
+  }
+
+  // 2. Hàm gọi Tavily Search API
+  async function executeTavilySearch(args) {
     try {
+      const searchArgs = typeof args === 'string' ? JSON.parse(args) : args;
       const res = await fetch('https://api.tavily.com/search', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           api_key: TAVILY_API_KEY,
-          query: searchQuery,
+          query: searchArgs.query || searchArgs,
           search_depth: "basic",
           max_results: 3
         })
@@ -571,68 +586,85 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- HÀM GỬI TIN NHẮN TỚI COHERE V1 + TAVILY ---
- async function handleSend(question) {
-  // 1. Tạo mảng messages ban đầu
-  const messages = [
-    { role: 'system', content: getActiveSystemPrompt() },
-    ...getFormattedHistory(), // Lịch sử trò chuyện trước đó
-    { role: 'user', content: question }
-  ];
+  // 3. Hàm xử lý gửi tin nhắn Cohere v2 + Tavily
+  async function handleSend() {
+    if (!promptInput) return;
+    const question = promptInput.value.trim();
+    if (!question) return;
 
-  // 2. Gửi Lượt 1: Hỏi AI
-  const res1 = await fetch('https://api.cohere.com/v2/chat', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${COHERE_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'command-r-plus',
-      messages: messages,
-      tools: [searchTool]
-    })
-  }).then(r => r.json());
+    // Hiển thị câu hỏi lên UI & lưu lịch sử
+    appendMessage('Em', question, 'user-message');
+    promptInput.value = '';
 
-  const assistantMessage = res1.message;
+    const messages = [
+      { role: 'system', content: getActiveSystemPrompt() },
+      ...getFormattedHistory(),
+      { role: 'user', content: question }
+    ];
 
-  // 3. Nếu AI muốn gọi Tool
-  if (assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-    const toolCall = assistantMessage.tool_calls[0];
-    
-    // Thực hiện tra cứu qua Tavily
-    const searchResults = await executeTavilySearch(toolCall.function.arguments);
+    try {
+      // Lượt 1: Hỏi AI
+      const res1 = await fetch('https://api.cohere.com/v2/chat', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${COHERE_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: 'command-r-plus',
+          messages: messages,
+          tools: [searchTool]
+        })
+      }).then(r => r.json());
 
-    // BẮT BUỘC ĐÚNG THỨ TỰ:
-    // Thêm câu trả lời chứa tool_calls của Assistant vào danh sách tin nhắn
-    messages.push(assistantMessage);
+      const assistantMessage = res1.message;
+      let finalAnswer = "";
 
-    // Thêm kết quả Tool ngay phía sau câu trả lời của Assistant
-    messages.push({
-      role: 'tool',
-      tool_call_id: toolCall.id,
-      content: JSON.stringify(searchResults)
-    });
+      // Kiểm tra nếu AI yêu cầu gọi Tool
+      if (assistantMessage && assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
+        const toolCall = assistantMessage.tool_calls[0];
+        
+        // Chạy Tool Tavily
+        const searchResults = await executeTavilySearch(toolCall.function.arguments);
 
-    // 4. Gửi Lượt 2: Nhận câu trả lời cuối cùng
-    const res2 = await fetch('https://api.cohere.com/v2/chat', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${COHERE_API_KEY}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'command-r-plus',
-        messages: messages // Đã chứa đúng luồng: User -> Assistant (tool_call) -> Tool (result)
-      })
-    }).then(r => r.json());
+        // Đưa theo đúng thứ tự chuẩn Cohere v2: User -> Assistant (chứa tool_call) -> Tool
+        messages.push(assistantMessage);
+        messages.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          content: JSON.stringify(searchResults)
+        });
 
-    return res2.message.content[0].text;
+        // Lượt 2: Nhận phản hồi cuối cùng
+        const res2 = await fetch('https://api.cohere.com/v2/chat', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${COHERE_API_KEY}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model: 'command-r-plus',
+            messages: messages
+          })
+        }).then(r => r.json());
+
+        finalAnswer = res2.message?.content?.[0]?.text || "Chị không thể xử lý phản hồi lúc này.";
+      } else {
+        finalAnswer = assistantMessage?.content?.[0]?.text || "Chị chưa nhận được câu trả lời.";
+      }
+
+      // Cập nhật lịch sử & hiển thị câu trả lời lên UI
+      conversationHistory.push({ role: 'USER', message: question });
+      conversationHistory.push({ role: 'CHATBOT', message: finalAnswer });
+      
+      appendMessage('Luna', finalAnswer, 'ai-message');
+
+    } catch (err) {
+      console.error("Lỗi API Cohere:", err);
+      appendMessage('Luna', '[Nheo mắt nhìn em] "Có vẻ kết nối mạng hoặc API key gặp sự cố rồi. Kiểm tra lại giúp chị nhé."', 'ai-message');
+    }
   }
 
-  // Nếu không gọi tool, trả về văn bản trực tiếp
-  return assistantMessage.content[0].text;
-}
   function resetChat() {
     if (chatBody) {
       chatBody.innerHTML = `

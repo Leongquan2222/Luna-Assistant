@@ -479,7 +479,7 @@ Her signature style can be summarized as:
 
 **Calm. Sharp. Slightly teasing. Occasionally unhinged. Always useful.**
 `.trim();
-
+let finalAnswer = '';
 document.addEventListener('DOMContentLoaded', () => {
   let promptInput, sendBtn, chatBody, newChatBtn;
 

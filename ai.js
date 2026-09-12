@@ -1,19 +1,19 @@
 document.addEventListener('DOMContentLoaded', () => {
   let promptInput, sendBtn, chatBody, newChatBtn;
 
-  // Lấy API key từ localStorage hoặc dùng key mặc định
-  const GROQ_API_KEY = localStorage.getItem('groq_key') || "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";
+  // Lấy API key từ localStorage
+  const OPENROUTER_API_KEY = localStorage.getItem('openrouter_key') || "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";
   const TAVILY_API_KEY = localStorage.getItem('tavily_key') || "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";
 
   let conversationHistory = [];
   let pastedImage = null;
-  let isRequesting = false; // Cờ chặn request trùng lặp (Rate Limit 429)
+  let isRequesting = false; // Chống spam request (429 Rate Limit)
 
   function getActiveSystemPrompt() {
     return typeof sysPrompt !== 'undefined' ? sysPrompt : 'Bạn là Luna, một trợ lý AI thông minh.';
   }
 
-  // Tối ưu từ khóa tìm kiếm
+  // Tối ưu query tìm kiếm
   function prepareSearchQuery(userMessage) {
     if (!userMessage) return '';
     const quotedText = userMessage.match(/"([^"]+)"/);
@@ -23,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return userMessage.replace(/(là lời bài hát nào|của ca sĩ|của|là bài gì)/gi, '').trim();
   }
 
-  // Thực thi tìm kiếm Tavily
+  // Gọi Tavily API
   async function executeTavilySearch(args) {
     try {
       const searchArgs = typeof args === 'string' ? JSON.parse(args) : args;
@@ -117,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const question = promptInput.value.trim();
     if (!question && !pastedImage) return;
 
-    // Khóa trạng thái gửi
     isRequesting = true;
     if (sendBtn) sendBtn.disabled = true;
 
@@ -129,7 +128,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     promptInput.value = '';
 
-    // Khởi tạo danh sách messages chuẩn OpenAI Format cho Groq
     const messages = [
       { role: 'system', content: getActiveSystemPrompt() },
       ...conversationHistory,
@@ -157,17 +155,17 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     try {
-      // ============================================================
-      // LƯỢT 1: Gửi yêu cầu tới Groq API
-      // ============================================================
-      const res1 = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      // LƯỢT 1: Gửi request tới OpenRouter API
+      const res1 = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${GROQ_API_KEY}`,
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'HTTP-Referer': window.location.href, // Bắt buộc theo chuẩn OpenRouter
+          'X-Title': 'Luna Assistant',
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'meta-llama/llama-prompt-guard-2-22m',
+          model: 'meta-llama/llama-3.3-70b-instruct', // Model mạnh mẽ hỗ trợ Tool Call chuẩn
           messages: messages,
           tools: toolsDefinition,
           tool_choice: 'auto'
@@ -175,15 +173,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       const res1Data = await res1.json();
-      if (!res1.ok) throw new Error(res1Data?.error?.message || `Groq API HTTP ${res1.status}`);
+      if (!res1.ok) throw new Error(res1Data?.error?.message || `OpenRouter API HTTP ${res1.status}`);
 
       const responseMessage = res1Data.choices[0].message;
 
-      // ============================================================
-      // KIỂM TRA LỆNH GỌI TOOL CALL
-      // ============================================================
+      // KIỂM TRA VÀ THỰC THI TOOL CALL
       if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
-        messages.push(responseMessage); // Lưu lại tin nhắn assistant gọi tool
+        messages.push(responseMessage);
 
         for (const toolCall of responseMessage.tool_calls) {
           if (toolCall.function.name === 'web_search') {
@@ -198,33 +194,32 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
 
-        // ============================================================
-        // LƯỢT 2: Gửi kết quả Tool về Groq để tổng hợp câu trả lời
-        // ============================================================
-        const res2 = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        // LƯỢT 2: Trả kết quả tìm kiếm lại cho OpenRouter
+        const res2 = await fetch('https://openrouter.ai/api/v1/chat/completions', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${GROQ_API_KEY}`,
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'HTTP-Referer': window.location.href,
+            'X-Title': 'Luna Assistant',
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
+            model: 'meta-llama/llama-3.3-70b-instruct',
             messages: messages
           })
         });
 
         const res2Data = await res2.json();
-        if (!res2.ok) throw new Error(res2Data?.error?.message || `Groq API HTTP ${res2.status}`);
+        if (!res2.ok) throw new Error(res2Data?.error?.message || `OpenRouter API HTTP ${res2.status}`);
 
         const finalAnswer = res2Data.choices[0].message.content.trim();
 
-        // Cập nhật lịch sử chat
         conversationHistory.push({ role: 'user', content: question });
         conversationHistory.push({ role: 'assistant', content: finalAnswer });
 
         appendMessage('Luna', finalAnswer, 'ai-message');
       } else {
-        // KHÔNG DÙNG TOOL
+        // Trả lời trực tiếp
         const finalAnswer = responseMessage.content.trim();
 
         conversationHistory.push({ role: 'user', content: question });
@@ -234,10 +229,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
     } catch (err) {
-      console.error('Lỗi Groq API:', err);
-      appendMessage('Luna', 'Có vẻ kết nối tới Groq API gặp sự cố. Bạn kiểm tra lại API Key nhé.', 'ai-message');
+      console.error('Lỗi OpenRouter API:', err);
+      appendMessage('Luna', 'Có vẻ kết nối tới OpenRouter API gặp sự cố. Bạn kiểm tra lại API Key nhé.', 'ai-message');
     } finally {
-      // Mở khóa gửi request
       isRequesting = false;
       if (sendBtn) sendBtn.disabled = false;
     }

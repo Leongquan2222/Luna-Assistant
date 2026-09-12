@@ -584,22 +584,122 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function handleSend() {
-    if (!promptInput) return;
-    const question = promptInput.value.trim();
-    if (!question) return;
+  if (!promptInput) return;
 
-    appendMessage('Em', question, 'user-message');
-    promptInput.value = '';
+  const question = promptInput.value.trim();
+  if (!question) return;
 
-    const messages = [
-      { role: 'system', content: getActiveSystemPrompt() },
-      ...getFormattedHistory(),
-      { role: 'user', content: question }
-    ];
+  // Hiển thị tin nhắn người dùng
+  appendMessage('Em', question, 'user-message');
+  promptInput.value = '';
 
-    try {
-      // Lượt 1: Hỏi Cohere v2
-      const res1 = await fetch('https://api.cohere.com/v2/chat', {
+  // Lịch sử chat của Cohere V1
+  const chatHistory = conversationHistory.map(item => ({
+    role: item.role,
+    message: item.message
+  }));
+
+  try {
+    // ============================================================
+    // LƯỢT 1 — Gửi câu hỏi cho Cohere V1
+    // ============================================================
+
+    const res1 = await fetch('https://api.cohere.com/v1/chat', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${COHERE_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'command-r-plus',
+        message: question,
+
+        // Prompt của Luna
+        preamble: getActiveSystemPrompt(),
+
+        // Lịch sử hội thoại
+        chat_history: chatHistory,
+
+        // Tool tìm kiếm
+        tools: [
+          {
+            name: 'web_search',
+            description:
+              'Tìm kiếm thông tin thực tế trên Internet khi người dùng hỏi về tin tức, dữ liệu mới, thông tin có thể thay đổi theo thời gian hoặc cần kiểm chứng.',
+            parameter_definitions: {
+              query: {
+                description: 'Từ khóa tìm kiếm trên web',
+                type: 'str',
+                required: true
+              }
+            }
+          }
+        ]
+      })
+    });
+
+    const res1Data = await res1.json();
+
+    console.log('COHERE V1 RESPONSE:', res1Data);
+
+    if (!res1.ok) {
+      console.error('Cohere API Error:', res1Data);
+
+      throw new Error(
+        res1Data?.message ||
+        res1Data?.error ||
+        `Cohere API HTTP ${res1.status}`
+      );
+    }
+
+    // ============================================================
+    // KIỂM TRA TOOL CALL
+    // ============================================================
+
+    if (
+      Array.isArray(res1Data.tool_calls) &&
+      res1Data.tool_calls.length > 0
+    ) {
+
+      const toolResults = [];
+
+      // Có thể có nhiều tool call
+      for (const toolCall of res1Data.tool_calls) {
+
+        console.log('TOOL CALL:', toolCall);
+
+        if (toolCall.name !== 'web_search') {
+          continue;
+        }
+
+        const searchResults = await executeTavilySearch(
+          toolCall.parameters
+        );
+
+        console.log('TAVILY RESULT:', searchResults);
+
+        toolResults.push({
+          call: {
+            name: 'web_search',
+            parameters: toolCall.parameters
+          },
+
+          outputs: [
+            {
+              result:
+                typeof searchResults === 'string'
+                  ? searchResults
+                  : JSON.stringify(searchResults)
+            }
+          ]
+        });
+      }
+
+      // ============================================================
+      // LƯỢT 2 — Đưa kết quả tìm kiếm trở lại Cohere
+      // ============================================================
+
+      const res2 = await fetch('https://api.cohere.com/v1/chat', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${COHERE_API_KEY}`,
@@ -607,77 +707,131 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         body: JSON.stringify({
           model: 'command-r-plus',
-          messages: messages,
-          tools: [searchTool]
-        })
-      }).then(r => r.json());
 
-      const assistantMessage = res1.message;
-      let finalAnswer = "";
+          // Không cần gửi lại câu hỏi bằng message mới.
+          message: '',
 
-      // Kiểm tra xem có yêu cầu Tool Call không
-      if (assistantMessage && assistantMessage.tool_calls && assistantMessage.tool_calls.length > 0) {
-        const toolCall = assistantMessage.tool_calls[0];
-        
-        // Thực thi tìm kiếm Tavily
-        const searchResults = await executeTavilySearch(toolCall.function.arguments);
+          // Giữ nguyên personality của Luna
+          preamble: getActiveSystemPrompt(),
 
-        // 1. Đưa phản hồi chứa tool_call của Assistant vào lịch sử
-        messages.push(assistantMessage);
+          // Lịch sử cũ + câu hỏi + phản hồi tool-call
+          chat_history: [
+            ...chatHistory,
 
-        // 2. Đưa kết quả Tool vào theo ĐÚNG FORMAT MẢNG OBJECT CỦA COHERE V2
-        messages.push({
-          role: 'tool',
-          tool_call_id: toolCall.id,
-          content: [
             {
-              type: 'text',
-              text: typeof searchResults === 'string' ? searchResults : JSON.stringify(searchResults)
+              role: 'USER',
+              message: question
+            },
+
+            {
+              role: 'CHATBOT',
+              message: res1Data.text || ''
+            }
+          ],
+
+          // Kết quả tool
+          tool_results: toolResults,
+
+          // Cho phép Cohere tiếp tục sử dụng tool nếu cần
+          tools: [
+            {
+              name: 'web_search',
+              description:
+                'Tìm kiếm thông tin thực tế trên Internet khi người dùng hỏi về tin tức, dữ liệu mới, thông tin có thể thay đổi theo thời gian hoặc cần kiểm chứng.',
+              parameter_definitions: {
+                query: {
+                  description: 'Từ khóa tìm kiếm trên web',
+                  type: 'str',
+                  required: true
+                }
+              }
             }
           ]
-        });
+        })
+      });
 
-        // 3. Lượt 2: Gửi lại cho Cohere v2 kèm mảng tools
-        const res2 = await fetch('https://api.cohere.com/v2/chat', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${COHERE_API_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: 'command-r-plus',
-            messages: messages,
-            tools: [searchTool]
-          })
-        }).then(r => r.json());
+      const res2Data = await res2.json();
 
-        const rawContent = res2.message?.content || [];
-        finalAnswer = rawContent
-          .filter(c => c.type === 'text')
-          .map(c => c.text)
-          .join('\n') || "Chị không thể xử lý phản hồi lúc này.";
+      console.log('COHERE V1 FINAL RESPONSE:', res2Data);
 
-      } else {
-        // Phản hồi thông thường không dùng tool
-        const rawContent = assistantMessage?.content || [];
-        finalAnswer = rawContent
-          .filter(c => c.type === 'text')
-          .map(c => c.text)
-          .join('\n') || "Chị chưa nhận được câu trả lời.";
+      if (!res2.ok) {
+        console.error('Cohere V1 second request error:', res2Data);
+
+        throw new Error(
+          res2Data?.message ||
+          res2Data?.error ||
+          `Cohere API HTTP ${res2.status}`
+        );
       }
 
-      // Lưu lịch sử và cập nhật giao diện
-      conversationHistory.push({ role: 'USER', message: question });
-      conversationHistory.push({ role: 'CHATBOT', message: finalAnswer });
-      
-      appendMessage('Luna', finalAnswer, 'ai-message');
+      // Cohere V1 trả text trực tiếp
+      finalAnswer =
+        typeof res2Data.text === 'string'
+          ? res2Data.text.trim()
+          : '';
 
-    } catch (err) {
-      console.error("Lỗi API Cohere:", err);
-      appendMessage('Luna', 'Có vẻ kết nối mạng hoặc API key gặp sự cố rồi. Kiểm tra lại giúp chị nhé.', 'ai-message');
+    } else {
+
+      // ============================================================
+      // KHÔNG DÙNG TOOL
+      // ============================================================
+
+      finalAnswer =
+        typeof res1Data.text === 'string'
+          ? res1Data.text.trim()
+          : '';
     }
-  }
 
+    // ============================================================
+    // FALLBACK AN TOÀN
+    // ============================================================
+
+    if (!finalAnswer) {
+
+      console.error(
+        'Cohere không trả về text:',
+        res1Data
+      );
+
+      finalAnswer =
+        'Ừ, chị đây. Có vẻ phản hồi vừa rồi không về đúng định dạng. Em nói lại chị nghe.';
+    }
+
+    // ============================================================
+    // LƯU LỊCH SỬ
+    // ============================================================
+
+    conversationHistory.push({
+      role: 'USER',
+      message: question
+    });
+
+    conversationHistory.push({
+      role: 'CHATBOT',
+      message: finalAnswer
+    });
+
+    // ============================================================
+    // HIỂN THỊ LUNA
+    // ============================================================
+
+    appendMessage(
+      'Luna',
+      finalAnswer,
+      'ai-message'
+    );
+
+  } catch (err) {
+
+    console.error('Lỗi API Cohere:', err);
+
+    appendMessage(
+      'Luna',
+      'Có vẻ kết nối tới hệ thống của chị gặp vấn đề rồi. Kiểm tra API key hoặc Console giúp chị.',
+      'ai-message'
+    );
+  }
+}
   function resetChat() {
     if (chatBody) {
       chatBody.innerHTML = `

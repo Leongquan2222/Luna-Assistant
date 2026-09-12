@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let promptInput, sendBtn, chatBody, newChatBtn;
 
   // Lấy API key từ localStorage
-  const OPENROUTER_API_KEY = localStorage.getItem('openrouter_key') || "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";
+  const OPENROUTER_API_KEY = localStorage.getItem('openrouter_key') || "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";
   const TAVILY_API_KEY = localStorage.getItem('tavily_key') || "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";
 
   let conversationHistory = [];

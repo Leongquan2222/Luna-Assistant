@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          model: 'whisper-large-v3-turbo',
+          model: 'groq/compound-mini',
           messages: messages,
           tools: toolsDefinition,
           tool_choice: 'auto'

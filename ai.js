@@ -58,34 +58,44 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function appendMessage(sender, text, roleClass) {
-    if (!chatBody) return;
-    const msgDiv = document.createElement('div');
-    const isUser = roleClass === 'user-message';
+  if (!chatBody) return;
+  const msgDiv = document.createElement('div');
+  const isUser = roleClass === 'user-message';
 
-    msgDiv.className = `message ${isUser ? 'user' : 'ai'}`;
-    const formattedContent = window.marked ? window.marked.parse(text) : text;
-    const avatarIcon = isUser ? '<i class="bi bi-person-fill"></i>' : '<i class="bi bi-moon-stars-fill"></i>';
+  msgDiv.className = `message ${isUser ? 'user' : 'ai'}`;
 
-    msgDiv.innerHTML = `
-      <div class="avatar">${avatarIcon}</div>
-      <div class="bubble">${formattedContent}</div>
-    `;
+  // 1. Tự động chuẩn hóa cú pháp LaTeX từ LLM trước khi render
+  let cleanText = text
+    .replace(/\\\[\s*/g, '$$$$')  // Đổi \[ thành $$
+    .replace(/\s*\\\]/g, '$$$$')  // Đổi \] thành $$
+    .replace(/\\\(\s*/g, '$')     // Đổi \( thành $
+    .replace(/\s*\\\)/g, '$');    // Đổi \) thành $
 
-    chatBody.appendChild(msgDiv);
-    chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
+  // 2. Parse Markdown và Render Avatar
+  const formattedContent = window.marked ? window.marked.parse(cleanText) : cleanText;
+  const avatarIcon = isUser ? '<i class="bi bi-person-fill"></i>' : '<i class="bi bi-moon-stars-fill"></i>';
 
-    setTimeout(() => {
-      if (window.renderMathInElement) {
-        window.renderMathInElement(msgDiv, {
-          delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '$', right: '$', display: false }
-          ],
-          throwOnError: false
-        });
-      }
-    }, 0);
-  }
+  msgDiv.innerHTML = `
+    <div class="avatar">${avatarIcon}</div>
+    <div class="bubble">${formattedContent}</div>
+  `;
+
+  chatBody.appendChild(msgDiv);
+  chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
+
+  // 3. Render KaTeX
+  setTimeout(() => {
+    if (window.renderMathInElement) {
+      window.renderMathInElement(msgDiv, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$', right: '$', display: false }
+        ],
+        throwOnError: false
+      });
+    }
+  }, 0);
+}
 
   function promptKeypressHandler(e) {
     if (e.key === 'Enter' && !e.shiftKey) {

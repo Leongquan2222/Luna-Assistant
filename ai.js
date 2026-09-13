@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // LƯỢT 2: Trả kết quả tìm kiếm lại cho OpenRouter
-        const res2 = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        const res2 = await fetch('https://worker-1.leh933827.workers.dev/', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${OPENROUTER_API_KEY}`,

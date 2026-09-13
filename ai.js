@@ -249,4 +249,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.resyncElements = resyncElements;
   resyncElements();
-});
+};

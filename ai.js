@@ -165,88 +165,51 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     try {
-      // LƯỢT 1: Gửi request tới OpenRouter API
-      const res1 = await fetch('https://worker-1.leh933827.workers.dev/', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'HTTP-Referer': window.location.href, // Bắt buộc theo chuẩn OpenRouter
-          'X-Title': 'Luna Assistant',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: 'nex-agi/nex-n2.5-pro:free', // Model mạnh mẽ hỗ trợ Tool Call chuẩn
-          messages: messages,
-          tools: toolsDefinition,
-          tool_choice: 'auto'
-        })
-      });
+  // LƯỢT 1: Gửi qua Worker (Ví dụ: Xử lý ngữ cảnh / Prompt)
+  const res1 = await fetch('https://worker-1.leh933827.workers.dev/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'qwen/qwen-2.5-7b-instruct:free',
+      messages: [
+        { role: 'system', content: 'Hãy phân tích ngắn gọn yêu cầu của người dùng.' },
+        { role: 'user', content: question }
+      ]
+    })
+  });
+  
+  const data1 = await res1.json();
+  if (!res1.ok) throw new Error(data1?.error?.message || 'Lỗi lượt 1');
+  const processedContext = data1.choices[0].message.content;
 
-      const res1Data = await res1.json();
-      if (!res1.ok) throw new Error(res1Data?.error?.message || `OpenRouter API HTTP ${res1.status}`);
+  // LƯỢT 2: Gửi lại Worker để sinh câu trả lời hoàn chỉnh
+  const res2 = await fetch('https://worker-1.leh933827.workers.dev/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'qwen/qwen-2.5-7b-instruct:free',
+      messages: [
+        { role: 'system', content: getActiveSystemPrompt() },
+        ...conversationHistory,
+        { role: 'user', content: `Ngữ cảnh: ${processedContext}\nCâu hỏi: ${question}` }
+      ],
+      max_tokens: 1000,
+      temperature: 0.7
+    })
+  });
 
-      const responseMessage = res1Data.choices[0].message;
+  const data2 = await res2.json();
+  if (!res2.ok) throw new Error(data2?.error?.message || 'Lỗi lượt 2');
+  
+  const finalAnswer = data2.choices[0].message.content.trim();
+  
+  // Hiển thị câu trả lời lên giao diện
+  appendMessage('Luna', finalAnswer, 'ai-message');
 
-      // KIỂM TRA VÀ THỰC THI TOOL CALL
-      if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
-        messages.push(responseMessage);
-
-        for (const toolCall of responseMessage.tool_calls) {
-          if (toolCall.function.name === 'web_search') {
-            const searchResults = await executeTavilySearch(toolCall.function.arguments);
-
-            messages.push({
-              tool_call_id: toolCall.id,
-              role: 'tool',
-              name: 'web_search',
-              content: typeof searchResults === 'string' ? searchResults : JSON.stringify(searchResults)
-            });
-          }
-        }
-
-        // LƯỢT 2: Trả kết quả tìm kiếm lại cho OpenRouter
-        const res2 = await fetch('https://worker-1.leh933827.workers.dev/', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-            'HTTP-Referer': window.location.href,
-            'X-Title': 'Luna Assistant',
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            model: 'meta-llama/llama-3.3-70b-instruct',
-            messages: messages
-          })
-        });
-
-        const res2Data = await res2.json();
-        if (!res2.ok) throw new Error(res2Data?.error?.message || `OpenRouter API HTTP ${res2.status}`);
-
-        const finalAnswer = res2Data.choices[0].message.content.trim();
-
-        conversationHistory.push({ role: 'user', content: question });
-        conversationHistory.push({ role: 'assistant', content: finalAnswer });
-
-        appendMessage('Luna', finalAnswer, 'ai-message');
-      } else {
-        // Trả lời trực tiếp
-        const finalAnswer = responseMessage.content.trim();
-
-        conversationHistory.push({ role: 'user', content: question });
-        conversationHistory.push({ role: 'assistant', content: finalAnswer });
-
-        appendMessage('Luna', finalAnswer, 'ai-message');
-      }
-
-    } catch (err) {
-      console.error('Lỗi OpenRouter API:', err);
-      appendMessage('Luna', 'Có vẻ kết nối tới OpenRouter API gặp sự cố. Bạn kiểm tra lại API Key nhé.', 'ai-message');
-    } finally {
-      isRequesting = false;
-      if (sendBtn) sendBtn.disabled = false;
-    }
-  }
-
+} catch (err) {
+  console.error('Lỗi API:', err);
+  appendMessage('Luna', 'Không thể kết nối tới máy chủ. Bạn thử lại sau nhé!', 'ai-message');
+}
   function resetChat() {
     if (chatBody) {
       chatBody.innerHTML = `

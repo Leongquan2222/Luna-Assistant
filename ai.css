@@ -1,72 +1,30 @@
 /* ==========================================
-   CSS CƠ BẢN VỚI BIẾN CSS (:root) - LUNA TUTOR
+   LUNA TUTOR - Simple CSS (Custom Palette)
 ========================================== */
+
+/* 1. KHAI BÁO BỘ BIẾN MỚI */
 :root {
-
-    /* =========================
-       Background
-    ========================= */
-
-    --bg: #141c28;          /* Xanh Navy rất tối (từ #1B5E20 & #324E7B) */
-
+    /* Background */
+    --bg: #141c28;          /* Xanh Navy rất tối */
     --surface: #1e2d42;     /* Nền bề mặt khối */
+    --card: #324e7b;        /* Màu card chính */
 
-    --card: #324e7b;        /* Màu card chính (#324E7B) */
+    /* Main Colors */
+    --primary: #1b5e20;     /* Deep Green */
+    --secondary: #5068a9;   /* Slate Blue */
+    --accent: #66bb6a;      /* Leaf Green rực rỡ */
 
-    /* =========================
-       Main Colors
-    ========================= */
+    /* Text */
+    --text: #f8f8f8;        /* Trắng sáng */
+    --text-secondary: #a5d6a7;/* Mint Green dịu mắt */
 
-    --primary: #1b5e20;     /* Deep Green (#1B5E20) */
+    /* Glass */
+    --glass: rgba(50, 78, 123, 0.45);
+    --glass-border: rgba(102, 187, 106, 0.25);
 
-    --secondary: #5068a9;   /* Slate Blue (#5068A9) */
-
-    --accent: #66bb6a;      /* Leaf Green rực rỡ (#66BB6A) */
-
-    /* =========================
-       Text
-    ========================= */
-
-    --text: #f8f8f8;        /* Trắng sáng (#F8F8F8) */
-
-    --text-secondary: #a5d6a7;/* Mint Green dịu mắt (#A5D6A7) */
-
-    /* =========================
-       Glass
-    ========================= */
-
-    --glass: rgba(50, 78, 123, .45);
-
-    --glass-border: rgba(102, 187, 106, .25);
-
-    /* =========================
-       Gradient
-    ========================= */
-
-    --gradient1: #141c28;
-
-    --gradient2: #1b5e20;
-
-    --gradient3: #324e7b;
-
-    --gradient4: #5068a9;
-
-    /* =========================
-       Blob
-    ========================= */
-
-    --blob1: #66bb6a;       /* Xanh lá tươi */
-
-    --blob2: #86a6df;       /* Xanh dương nhạt (#86A6DF) */
-
-    /* =========================
-       Shadow
-    ========================= */
-
-    --shadow: rgba(0, 0, 0, .45);
-
+    /* Shadow */
+    --shadow: rgba(0, 0, 0, 0.45);
 }
-
 
 /* 2. RESET MẶC ĐỊNH */
 * {
@@ -77,13 +35,13 @@
 
 body {
     font-family: Arial, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-color);
+    background-color: var(--bg);
+    color: var(--text);
     height: 100vh;
     overflow: hidden;
 }
 
-button, input {
+button, input, select {
     font-family: inherit;
     border: none;
     outline: none;
@@ -101,14 +59,15 @@ button {
     transform: translateX(-50%);
     width: 90%;
     max-width: 800px;
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
+    background: var(--surface);
+    border: 1px solid var(--glass-border);
     border-radius: 12px;
     padding: 10px 20px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 10;
+    box-shadow: 0 4px 15px var(--shadow);
 }
 
 .character-info, .dock-controls {
@@ -121,17 +80,29 @@ button {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: var(--border-color);
+    background: var(--primary);
+    border: 1px solid var(--accent);
     display: flex;
     align-items: center;
     justify-content: center;
+    color: var(--text);
+}
+
+.character-role {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
 }
 
 .reset-btn {
-    background: #252a34;
-    color: var(--text-color);
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--glass-border);
     padding: 6px 12px;
     border-radius: 6px;
+}
+
+.reset-btn:hover {
+    background: var(--secondary);
 }
 
 /* 4. KHUNG CHAT & TIN NHẮN */
@@ -166,16 +137,18 @@ button {
     border-radius: 12px;
     line-height: 1.5;
     font-size: 15px;
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 10px var(--shadow);
 }
 
 .message.ai .bubble {
-    background: var(--ai-bubble);
-    color: var(--text-color);
+    background: var(--surface);
+    color: var(--text);
 }
 
 .message.user .bubble {
-    background: var(--user-bubble);
-    color: var(--text-color);
+    background: var(--secondary);
+    color: var(--text);
 }
 
 /* 5. KHUNG NHẬP TIN NHẮN (BOTTOM DOCK) */
@@ -189,25 +162,36 @@ button {
 }
 
 .input-dock {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
+    background: var(--surface);
+    border: 1px solid var(--glass-border);
     border-radius: 12px;
     padding: 8px 15px;
     display: flex;
     gap: 10px;
+    box-shadow: 0 4px 15px var(--shadow);
 }
 
 .input-dock input {
     flex: 1;
     background: transparent;
-    color: var(--text-color);
+    color: var(--text);
     font-size: 15px;
+}
+
+.input-dock input::placeholder {
+    color: var(--text-secondary);
 }
 
 .send-btn {
     width: 40px;
     height: 40px;
     border-radius: 8px;
-    background: var(--user-bubble);
-    color: var(--text-color);
+    background: var(--primary);
+    color: var(--text);
+    border: 1px solid var(--accent);
+}
+
+.send-btn:hover {
+    background: var(--accent);
+    color: #000;
 }

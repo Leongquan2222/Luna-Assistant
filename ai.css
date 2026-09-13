@@ -59,6 +59,7 @@ button {
     transform: translateX(-50%);
     width: 90%;
     max-width: 800px;
+    height:18px;
     background: var(--surface);
     border: 1px solid var(--glass-border);
     border-radius: 12px;

@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'qwen/qwen-2.5-7b-instruct:free',
+          model: 'nex-agi/nex-n2.5-pro:free',
           messages: updatedMessages,
           max_tokens: 1000,
           temperature: 0.7

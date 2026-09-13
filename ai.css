@@ -1,41 +1,106 @@
 /* ==========================================
    LUNA TUTOR - Minimalist Dock Navigation
-   ai.css (Optimized)
+   ai.css (Full Effects with Custom Palette)
 ========================================== */
 
+/* =========================
+   CUSTOM PALETTE VARIABLES
+========================= */
 :root {
-    --bg: #0d0f12;
-    --text: #e6e8ec;
-    --text-sec: #8b949e;
-    --glass: rgba(22, 26, 33, 0.85);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --primary-grad: linear-gradient(135deg, #a855f7, #6366f1);
+    /* Background */
+    --bg: #141c28;           /* Xanh Navy rất tối */
+    --surface: #1e2d42;      /* Nền bề mặt khối */
+    --card: #324e7b;         /* Màu card chính */
+
+    /* Main Colors */
+    --primary: #1b5e20;      /* Deep Green */
+    --secondary: #5068a9;    /* Slate Blue */
+    --accent: #66bb6a;       /* Leaf Green rực rỡ */
+
+    /* Text */
+    --text: #f8f8f8;         /* Trắng sáng */
+    --text-secondary: #a5d6a7; /* Mint Green dịu mắt */
+
+    /* Glass */
+    --glass: rgba(50, 78, 123, 0.45);
+    --glass-border: rgba(102, 187, 106, 0.25);
+
+    /* Gradient */
+    --gradient1: #141c28;
+    --gradient2: #1b5e20;
+    --gradient3: #324e7b;
+    --gradient4: #5068a9;
+
+    /* Blob */
+    --blob1: #66bb6a;        /* Xanh lá tươi */
+    --blob2: #86a6df;        /* Xanh dương nhạt */
+
+    /* Shadow */
+    --shadow: rgba(0, 0, 0, 0.45);
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
 html, body {
-    width: 100%; height: 100vh;
+    width: 100%;
+    height: 100vh;
     font-family: 'Inter', "Segoe UI", system-ui, sans-serif;
-    background: var(--bg); color: var(--text);
+    background: var(--bg);
+    color: var(--text);
     overflow: hidden;
-    transition: background .45s, color .45s;
+    transition: background .45s ease, color .45s ease;
 }
 
-button, input, select { font-family: inherit; outline: none; border: none; }
-button { cursor: pointer; }
+button, input, select {
+    font-family: inherit;
+    outline: none;
+    border: none;
+}
+
+button {
+    cursor: pointer;
+}
 
 /* =========================
    APP VIEWPORT & BLOBS
 ========================= */
-.app-viewport { width: 100%; height: 100vh; display: flex; flex-direction: column; position: relative; }
+.app-viewport {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
 
 .bg-blob {
-    position: absolute; border-radius: 50%; filter: blur(110px); opacity: .45; z-index: 0;
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(110px);
+    opacity: .45;
+    z-index: 0;
     animation: blobMove 16s ease-in-out infinite;
 }
-.blob1 { width: 340px; height: 340px; background: #a855f7; left: -120px; top: -80px; }
-.blob2 { width: 420px; height: 420px; background: #3b82f6; right: -140px; bottom: -120px; animation-delay: 5s; }
+
+.blob1 {
+    width: 340px;
+    height: 340px;
+    background: var(--blob1);
+    left: -120px;
+    top: -80px;
+}
+
+.blob2 {
+    width: 420px;
+    height: 420px;
+    background: var(--blob2);
+    right: -140px;
+    bottom: -120px;
+    animation-delay: 5s;
+}
 
 @keyframes blobMove {
     0%, 100% { transform: translate(0, 0) scale(1); }
@@ -43,70 +108,193 @@ button { cursor: pointer; }
 }
 
 /* =========================
-   FLOATING DOCKS (TOP & BOTTOM)
+   TOP FLOATING DOCK
 ========================= */
-.top-dock, .input-dock-container {
-    position: fixed; left: 50%; transform: translateX(-50%);
-    width: 90%; max-width: 850px; z-index: 100;
-}
-
 .top-dock {
-    top: 16px; padding: 12px 20px;
-    display: flex; justify-content: space-between; align-items: center;
-    background: var(--glass); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-    border: 1px solid var(--glass-border); border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, .3);
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 850px;
+    background: var(--glass);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 100;
+    box-shadow: 0 10px 25px var(--shadow);
 }
 
-.character-info, .dock-controls { display: flex; align-items: center; gap: 10px; }
-.character-name { font-size: 1.05rem; font-weight: 700; color: #fff; }
-.character-role { font-size: 0.75rem; color: var(--text-sec); }
-
-.theme-select, .language-select, .reset-btn {
-    background: rgba(255, 255, 255, 0.05); color: #fff;
-    border: 1px solid var(--glass-border); border-radius: 10px;
-    font-size: 0.82rem; padding: 6px 10px; transition: background .2s;
+.character-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
-.theme-select option, .language-select option { background: #161a21; color: #fff; }
-.reset-btn:hover { background: rgba(255, 255, 255, 0.15); }
-
-/* =========================
-   CHAT CONTAINER & MESSAGES
-========================= */
-.chat-container {
-    flex: 1; width: 100%; height: 100vh;
-    overflow-y: auto; overflow-x: hidden;
-    padding: 100px 20px 160px;
-    display: flex; justify-content: center;
-    position: relative; z-index: 1;
-}
-
-.chat-body { width: 100%; max-width: 850px; display: flex; flex-direction: column; gap: 18px; }
-
-.message { display: flex; align-items: flex-start; gap: 12px; animation: messageShow .35s ease; }
-.message.user { flex-direction: row-reverse; }
 
 .avatar {
-    width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15);
-    display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: var(--text);
+    flex-shrink: 0;
+}
+
+.character-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text);
+}
+
+.character-role {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.dock-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.theme-select, .language-select {
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--glass-border);
+    border-radius: 10px;
+    font-size: 0.82rem;
+    padding: 6px 10px;
+    cursor: pointer;
+}
+
+.theme-select option, .language-select option {
+    background-color: var(--bg);
+    color: var(--text);
+}
+
+.reset-btn {
+    background: transparent;
+    color: var(--text);
+    border-radius: 10px;
+    padding: 6px 12px;
+    border: 1px solid var(--glass-border);
+    transition: all .2s;
+}
+
+.reset-btn:hover {
+    background: var(--surface);
+}
+
+/* =========================
+   CHAT STREAM CONTAINER
+========================= */
+.chat-container {
+    flex: 1;
+    width: 100%;
+    height: 100vh;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    padding: 115px 20px 160px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+}
+
+.chat-body {
+    width: 100%;
+    max-width: 850px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    height: auto !important;
+    min-height: min-content;
+}
+
+/* =========================
+   MESSAGES & BUBBLES
+========================= */
+.message {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    animation: messageShow .35s ease;
+}
+
+.message.user {
+    flex-direction: row-reverse;
 }
 
 .bubble {
-    max-width: 80%; padding: 16px 20px; border-radius: 18px;
-    line-height: 1.65; word-break: break-word; font-size: 15px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, .15); border: 1px solid rgba(255, 255, 255, 0.08);
+    max-width: 80%;
+    padding: 16px 20px;
+    border-radius: 18px;
+    line-height: 1.65;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    font-size: 15px;
+    box-shadow: 0 8px 20px var(--shadow);
+    border: 1px solid var(--glass-border);
 }
-.message.ai .bubble { background: rgba(30, 35, 45, 0.75); color: var(--text); }
-.message.user .bubble { background: var(--primary-grad); color: #fff; font-weight: 500; }
 
-/* Markdown Formatting */
-.bubble p { margin-bottom: 8px; }
-.bubble p:last-child { margin-bottom: 0; }
-.bubble pre { background: rgba(0, 0, 0, .45); padding: 14px; border-radius: 12px; overflow-x: auto; margin-top: 10px; border: 1px solid var(--glass-border); }
-.bubble code { font-family: Consolas, Monaco, monospace; font-size: 0.9em; }
-.bubble table { width: 100%; border-collapse: collapse; margin-top: 12px; display: block; overflow-x: auto; }
-.bubble th, .bubble td { padding: 8px 12px; border: 1px solid var(--glass-border); }
+.message.ai .bubble {
+    background: var(--surface);
+    color: var(--text);
+}
+
+.message.user .bubble {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--text);
+    font-weight: 500;
+}
+
+/* Format nội dung Markdown */
+.bubble p {
+    margin-bottom: 8px;
+}
+.bubble p:last-child {
+    margin-bottom: 0;
+}
+
+.bubble pre {
+    background: rgba(0, 0, 0, .45);
+    padding: 14px;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin-top: 10px;
+    border: 1px solid var(--glass-border);
+}
+
+.bubble code {
+    font-family: Consolas, Monaco, monospace;
+    font-size: 0.9em;
+}
+
+.bubble table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    display: block;
+    overflow-x: auto;
+}
+
+.bubble th, .bubble td {
+    padding: 8px 12px;
+    border: 1px solid var(--glass-border);
+}
 
 @keyframes messageShow {
     from { opacity: 0; transform: translateY(12px); }
@@ -114,31 +302,71 @@ button { cursor: pointer; }
 }
 
 /* =========================
-   INPUT DOCK & SCROLLBAR
+   BOTTOM INPUT DOCK
 ========================= */
-.input-dock-container { bottom: 20px; }
-.input-dock {
-    background: var(--glass); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
-    border: 1px solid var(--glass-border); border-radius: 18px;
-    padding: 8px 12px 8px 20px; display: flex; align-items: center; gap: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+.input-dock-container {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 850px;
+    z-index: 100;
 }
 
-.input-dock input { flex: 1; background: transparent; color: #fff; font-size: 0.98rem; padding: 8px 0; }
-.input-dock input::placeholder { color: var(--text-sec); }
+.input-dock {
+    background: var(--glass);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    padding: 8px 12px 8px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 10px 30px var(--shadow);
+}
+
+.input-dock input {
+    flex: 1;
+    background: transparent;
+    color: var(--text);
+    font-size: 0.98rem;
+    padding: 8px 0;
+}
+
+.input-dock input::placeholder {
+    color: var(--text-secondary);
+}
 
 .send-btn {
-    width: 44px; height: 44px; border-radius: 14px; background: var(--primary-grad); color: #fff;
-    display: flex; align-items: center; justify-content: center; font-size: 18px;
-    transition: transform .2s, opacity .2s;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    transition: transform .2s ease, opacity .2s ease;
 }
-.send-btn:hover { transform: translateY(-2px); opacity: 0.9; }
-.send-btn:active { transform: scale(.95); }
 
+.send-btn:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+.send-btn:active {
+    transform: scale(.95);
+}
+
+/* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 10px; }
 
+/* Responsive */
 @media (max-width: 768px) {
     .top-dock, .input-dock-container { width: 95%; }
     .dock-controls .theme-select { display: none; }

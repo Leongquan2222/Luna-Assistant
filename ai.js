@@ -1,41 +1,79 @@
-document.addEventListener('DOMContentLoaded', () => {
-  let promptInput, sendBtn, chatBody, newChatBtn;
+/* ==========================================================================
+   1. CLOUDFLARE WORKER BACKEND CODE (Đặt trong Dashboard Cloudflare Worker)
+   ========================================================================== */
+export default {
+  async fetch(request, env) {
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    };
 
-  let conversationHistory = [];
-  let pastedImage = null;
-  let isRequesting = false; // Chống spam request (429 Rate Limit)
-
-  function getActiveSystemPrompt() {
-    return typeof sysPrompt !== 'undefined' ? sysPrompt : 'Bạn là Luna, một trợ lý AI thông minh.';
-  }
-
-  // Tối ưu query tìm kiếm
-  function prepareSearchQuery(userMessage) {
-    if (!userMessage) return '';
-    const quotedText = userMessage.match(/"([^"]+)"/);
-    if (quotedText && quotedText[1]) {
-      return `lời bài hát "${quotedText[1]}"`;
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { headers: corsHeaders });
     }
-    return userMessage.replace(/(là lời bài hát nào|của ca sĩ|của|là bài gì)/gi, '').trim();
-  }
 
-  // Hiển thị tin nhắn lên giao diện
+    if (request.method !== 'POST') {
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    try {
+      const body = await request.json();
+
+      const hfResponse = await fetch('https://router.huggingface.co/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${env.HF_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'Qwen/Qwen3.8-27B',
+          messages: body.messages,
+          max_tokens: body.max_tokens || 1200,
+          temperature: body.temperature || 0.75,
+        }),
+      });
+
+      const data = await hfResponse.json();
+
+      return new Response(JSON.stringify(data), {
+        status: hfResponse.status,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (err) {
+      return new Response(JSON.stringify({ error: err.message }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  },
+};
+
+/* ==========================================================================
+   2. FRONTEND CLIENT CODE (Nhúng vào HTML trình duyệt)
+   ========================================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+  const WORKER_URL = 'https://your-worker-name.your-subdomain.workers.dev';
+
+  let promptInput, sendBtn, chatBody, newChatBtn;
+  let conversationHistory = [];
+  let isRequesting = false;
+
+  const COMPANION_SYSTEM_PROMPT = `
+Bạn là Luna, một người bạn đồng hành AI thân thiết, thông minh, tinh tế và ấm áp.
+- Xưng hô: Tự xưng là "Luna" hoặc "chị" và gọi người dùng là "em".
+- Tông giọng: Nhẹ nhàng, quan tâm, tự nhiên như người thân thiết, đôi khi có chút dí dỏm.
+- Nhiệm vụ: Lắng nghe, chia sẻ, hỗ trợ giải đáp thắc mắc, giúp đỡ viết code, toán học hoặc sáng tạo nội dung.
+- Giữ câu trả lời súc tích, tự nhiên, không rập khuôn theo kiểu bot hỗ trợ khách hàng.
+  `.trim();
+
   function appendMessage(sender, text, roleClass) {
     if (!chatBody) return;
     const msgDiv = document.createElement('div');
     const isUser = roleClass === 'user-message';
 
     msgDiv.className = `message ${isUser ? 'user' : 'ai'}`;
-
-    // 1. Tự động chuẩn hóa cú pháp LaTeX từ LLM trước khi render
-    let cleanText = text
-      .replace(/\\\[\s*/g, '$$$$')  // Đổi \[ thành $$
-      .replace(/\s*\\\]/g, '$$$$')  // Đổi \] thành $$
-      .replace(/\\\(\s*/g, '$')     // Đổi \( thành $
-      .replace(/\s*\\\)/g, '$');    // Đổi \) thành $
-
-    // 2. Parse Markdown và Render Avatar
-    const formattedContent = window.marked ? window.marked.parse(cleanText) : cleanText;
+    const formattedContent = window.marked ? window.marked.parse(text) : text;
     const avatarIcon = isUser ? '<i class="bi bi-person-fill"></i>' : '<i class="bi bi-moon-stars-fill"></i>';
 
     msgDiv.innerHTML = `
@@ -46,41 +84,14 @@ document.addEventListener('DOMContentLoaded', () => {
     chatBody.appendChild(msgDiv);
     chatBody.scrollTo({ top: chatBody.scrollHeight, behavior: 'smooth' });
 
-    // 3. Render KaTeX
-    setTimeout(() => {
-      if (window.renderMathInElement) {
-        window.renderMathInElement(msgDiv, {
-          delimiters: [
-            { left: '$$', right: '$$', display: true },
-            { left: '$', right: '$', display: false }
-          ],
-          throwOnError: false
-        });
-      }
-    }, 0);
-  }
-
-  function promptKeypressHandler(e) {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }
-
-  function handlePaste(e) {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-
-    for (const item of items) {
-      if (item.type.startsWith("image/")) {
-        const file = item.getAsFile();
-        if (file) {
-          pastedImage = file;
-          appendMessage('Hệ thống', '📎 Đã đính kèm 1 ảnh từ clipboard.', 'user-message');
-        }
-        e.preventDefault();
-        break;
-      }
+    if (window.renderMathInElement) {
+      window.renderMathInElement(msgDiv, {
+        delimiters: [
+          { left: '$$', right: '$$', display: true },
+          { left: '$', right: '$', display: false }
+        ],
+        throwOnError: false
+      });
     }
   }
 
@@ -88,54 +99,39 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isRequesting || !promptInput) return;
 
     const question = promptInput.value.trim();
-    if (!question && !pastedImage) return;
+    if (!question) return;
 
     isRequesting = true;
     if (sendBtn) sendBtn.disabled = true;
 
-    if (question) appendMessage('Em', question, 'user-message');
-    if (pastedImage) {
-      appendMessage('Em', '🖼️ [Đã gửi ảnh]', 'user-message');
-      pastedImage = null;
-    }
-
+    appendMessage('Em', question, 'user-message');
     promptInput.value = '';
 
-    // Cập nhật lịch sử hội thoại
-    const updatedMessages = [
-      { role: 'system', content: getActiveSystemPrompt() },
+    const messages = [
+      { role: 'system', content: COMPANION_SYSTEM_PROMPT },
       ...conversationHistory,
       { role: 'user', content: question }
     ];
 
     try {
-      // Gửi trực tiếp 1 lượt qua Cloudflare Worker proxy để giảm độ trễ
-      const res = await fetch('https://worker-1.leh933827.workers.dev/', {
+      const res = await fetch(WORKER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'nex-agi/nex-n2.5-pro:free',
-          messages: updatedMessages,
-          max_tokens: 1000,
-          temperature: 0.7
-        })
+        body: JSON.stringify({ messages })
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.error?.message || `Lỗi HTTP ${res.status}`);
+      if (!res.ok) throw new Error(data?.error || `Lỗi HTTP ${res.status}`);
 
       const finalAnswer = data.choices[0].message.content.trim();
 
-      // Lưu câu trả lời vào lịch sử
       conversationHistory.push({ role: 'user', content: question });
       conversationHistory.push({ role: 'assistant', content: finalAnswer });
 
-      // Hiển thị câu trả lời
       appendMessage('Luna', finalAnswer, 'ai-message');
-
     } catch (err) {
-      console.error('Lỗi API:', err);
-      appendMessage('Luna', 'Không thể kết nối tới máy chủ. Bạn thử lại sau nhé!', 'ai-message');
+      console.error('Lỗi kết nối:', err);
+      appendMessage('Luna', 'Chị bị gián đoạn kết nối một chút. Em thử gửi lại giúp chị nhé!', 'ai-message');
     } finally {
       isRequesting = false;
       if (sendBtn) sendBtn.disabled = false;
@@ -147,14 +143,11 @@ document.addEventListener('DOMContentLoaded', () => {
       chatBody.innerHTML = `
         <div class="message ai">
           <div class="avatar"><i class="bi bi-moon-stars-fill"></i></div>
-          <div class="bubble">
-            Chào bạn. Tôi là Luna. Tôi có thể hỗ trợ gì cho bạn hôm nay?
-          </div>
+          <div class="bubble">Luna đây rồi! Hôm nay của em thế nào? Có chuyện gì muốn kể hoặc cần chị hỗ trợ không?</div>
         </div>
       `;
     }
     conversationHistory = [];
-    pastedImage = null;
   }
 
   function resyncElements() {
@@ -163,20 +156,14 @@ document.addEventListener('DOMContentLoaded', () => {
     chatBody = document.getElementById('chatBody');
     newChatBtn = document.getElementById('newChatBtn');
 
-    if (sendBtn) {
-      sendBtn.removeEventListener('click', handleSend);
-      sendBtn.addEventListener('click', handleSend);
-    }
-    if (promptInput) {
-      promptInput.removeEventListener('keydown', promptKeypressHandler);
-      promptInput.addEventListener('keydown', promptKeypressHandler);
-      promptInput.removeEventListener('paste', handlePaste);
-      promptInput.addEventListener('paste', handlePaste);
-    }
-    if (newChatBtn) {
-      newChatBtn.removeEventListener('click', resetChat);
-      newChatBtn.addEventListener('click', resetChat);
-    }
+    sendBtn?.addEventListener('click', handleSend);
+    promptInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    });
+    newChatBtn?.addEventListener('click', resetChat);
   }
 
   window.resyncElements = resyncElements;
